@@ -31,6 +31,7 @@ public class StudentProfile {
     private String experience;
 
     private String skills; 
+    private String resumeUrl;
 
     @Lob
     @Column(length = 10000000)

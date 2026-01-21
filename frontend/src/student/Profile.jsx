@@ -30,7 +30,7 @@ const Profile = () => {
                 name: data.name || '',
                 email: data.email || '',
                 skills: data.skills || '',
-                resumeUrl: data.resumeFileName || '', // Using resumeFileName as URL placeholder
+             resumeUrl: data.resumeUrl || '', // Using resumeFileName as URL placeholder
                 university: data.university || '',
                 degree: data.degree || '',
                 graduationYear: data.graduationYear || '',
@@ -65,7 +65,7 @@ const Profile = () => {
                 <div className="bg-white rounded-lg shadow-lg p-8">
                     <div className="flex items-center mb-8 border-b pb-4">
                         <User className="w-8 h-8 text-blue-600 mr-3" />
-                        <h1 className="text-3xl font-bold text-gray-800">My Student Profile</h1>
+                        <h1 className="text-3xl font-bold text-gray-800">Student Profile</h1>
                     </div>
 
                     {loading ? <p>Loading...</p> : (

@@ -21,10 +21,10 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link
-              to="/"
+              // to="/"
               className="flex items-center text-xl font-bold text-blue-600"
             >
-              <Briefcase className="w-6 h-6 mr-2" />
+              <Briefcase className="w-6 h-6 mr-3" />
               JobPortal
             </Link>
 

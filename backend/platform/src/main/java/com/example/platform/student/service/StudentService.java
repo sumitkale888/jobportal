@@ -16,6 +16,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +32,7 @@ public class StudentService {
     public StudentProfileDto getProfile(String email) {
         StudentProfile profile = profileRepository.findByUserEmail(email)
                 .orElseThrow(() -> new RuntimeException("Profile not found. Please complete your profile."));
+
         return mapToDto(profile);
     }
 
@@ -40,38 +44,50 @@ public class StudentService {
         StudentProfile profile = profileRepository.findByUserEmail(email)
                 .orElse(StudentProfile.builder()
                         .user(user)
-                        .skills("") 
+                        .skills("")
                         .savedJobs(new ArrayList<>())
                         .build());
 
+        // Update fields
         if (request.getUniversity() != null) profile.setUniversity(request.getUniversity());
         if (request.getDegree() != null) profile.setDegree(request.getDegree());
         if (request.getGraduationYear() != null) profile.setGraduationYear(request.getGraduationYear());
         if (request.getCgpa() != null) profile.setCgpa(request.getCgpa());
         if (request.getExperience() != null) profile.setExperience(request.getExperience());
 
+        // Update Skills
         if (request.getSkills() != null) {
             profile.setSkills(request.getSkills());
+        }
+        
+        // ✅ SAVE THE RESUME URL
+        if (request.getResumeUrl() != null) {
+            profile.setResumeUrl(request.getResumeUrl());
         }
 
         StudentProfile savedProfile = profileRepository.save(profile);
         return mapToDto(savedProfile);
     }
 
+    // ... (Keep uploadResume code here) ...
     @Transactional
     public String uploadResume(MultipartFile file, String email) throws IOException {
         StudentProfile profile = profileRepository.findByUserEmail(email)
-                .orElseThrow(() -> new RuntimeException("Please create a basic profile before uploading a resume."));
-
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
         profile.setResumeFile(file.getBytes());
         profile.setResumeFileName(file.getOriginalFilename());
         profile.setResumeContentType(file.getContentType());
-
         profileRepository.save(profile);
-        return "Resume uploaded successfully: " + file.getOriginalFilename();
+        return "File uploaded";
     }
-    
-    // ✅ ADDED: Missing methods for Saved Jobs
+
+    @Transactional(readOnly = true)
+    public StudentProfile getProfileEntity(String email) {
+        return profileRepository.findByUserEmail(email)
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+    }
+
+    // Keep Saved Job methods...
     @Transactional
     public String saveJob(Long jobId, String email) {
         StudentProfile profile = profileRepository.findByUserEmail(email).orElseThrow(() -> new RuntimeException("Profile not found"));
@@ -83,9 +99,7 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public List<JobResponse> getSavedJobs(String email) {
-        StudentProfile profile = profileRepository.findByUserEmail(email).orElseThrow(() -> new RuntimeException("Profile not found"));
-        // You need to implement mapJobToResponse or use a mapper
-        // Simple placeholder logic:
+         // Placeholder implementation
         return new ArrayList<>(); 
     }
 
@@ -97,13 +111,9 @@ public class StudentService {
         return "Job Unsaved";
     }
 
-    // ✅ ADDED: Missing helper method for Resume Download
-    @Transactional(readOnly = true)
-    public StudentProfile getProfileEntity(String email) {
-        return profileRepository.findByUserEmail(email)
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
-    }
-
+    // =================================================================
+    // MAPPING (Update this!)
+    // =================================================================
     private StudentProfileDto mapToDto(StudentProfile profile) {
         return StudentProfileDto.builder()
                 .name(profile.getUser().getName())
@@ -114,6 +124,10 @@ public class StudentService {
                 .cgpa(profile.getCgpa())
                 .skills(profile.getSkills())
                 .experience(profile.getExperience())
+                
+                // ✅ MAP RESUME URL BACK TO FRONTEND
+                .resumeUrl(profile.getResumeUrl())
+                
                 .resumeFileName(profile.getResumeFileName())
                 .build();
     }

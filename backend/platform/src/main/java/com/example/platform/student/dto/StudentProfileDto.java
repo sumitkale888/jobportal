@@ -19,6 +19,7 @@ public class StudentProfileDto {
     private String graduationYear;
     private Double cgpa;
     private String experience;
+    private String resumeUrl;
     
     private String skills; 
     private String resumeFileName; 
