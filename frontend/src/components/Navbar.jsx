@@ -58,28 +58,14 @@ const Navbar = () => {
                   </Link>
                 </>
               )}
-              {role === "RECRUITER" && (
-                <>
-                  <Link
-                    to="/recruiter/dashboard"
-                    className="text-gray-700 hover:text-blue-600"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    to="/recruiter/post-job"
-                    className="text-gray-700 hover:text-blue-600"
-                  >
-                    Post Job
-                  </Link>
-                  <Link
-                    to="/recruiter/my-jobs"
-                    className="text-gray-700 hover:text-blue-600"
-                  >
-                    My Jobs
-                  </Link>
-                </>
-              )}
+              
+{role === 'RECRUITER' && (
+    <>
+        <Link to="/recruiter/dashboard" className="mr-4 hover:text-blue-200">Dashboard</Link>
+        <Link to="/recruiter/post-job" className="mr-4 hover:text-blue-200">Post Job</Link>
+        <Link to="/recruiter/profile" className="mr-4 hover:text-blue-200">Company Profile</Link>
+    </>
+)}
               {role === "ADMIN" && (
                 <>
                   <Link

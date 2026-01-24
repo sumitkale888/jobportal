@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import { MapPin, DollarSign, Building, Briefcase, CheckCircle } from 'lucide-react';
 
 const JobDetails = () => {
-    const { id } = useParams(); // Get Job ID from URL
+    const { id } = useParams();
     const navigate = useNavigate();
     const [job, setJob] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -32,14 +32,20 @@ const JobDetails = () => {
         try {
             await applyForJob(id);
             toast.success("Application Submitted Successfully!");
-            // Optional: navigate to 'My Applications' page
+            navigate('/student/applications'); // Redirect to see your application
         } catch (error) {
-            // Check if it's the "Profile missing" error
-            if (error.response && error.response.status === 500) {
-                 toast.error("Please complete your profile first!");
-                 navigate('/student/profile');
+            console.error("Apply Error:", error);
+            
+            // ✅ FIX: Read the ACTUAL error message from backend
+            const errorMsg = error.response?.data?.message || error.response?.data || "Failed to apply";
+            
+            if (errorMsg.includes("complete your profile")) {
+                toast.error("Please complete your profile first!");
+                navigate('/student/profile');
+            } else if (errorMsg.includes("already applied")) {
+                toast.info("You have already applied for this job.");
             } else {
-                 toast.error(error.response?.data || "Failed to apply");
+                toast.error(errorMsg);
             }
         }
     };
@@ -52,7 +58,6 @@ const JobDetails = () => {
             <Navbar />
             <div className="max-w-4xl mx-auto px-4 py-10">
                 <div className="bg-white rounded-lg shadow-xl overflow-hidden">
-                    {/* Header */}
                     <div className="bg-blue-600 p-8 text-white">
                         <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
                         <div className="flex items-center space-x-6 opacity-90">
@@ -62,7 +67,6 @@ const JobDetails = () => {
                         </div>
                     </div>
 
-                    {/* Content */}
                     <div className="p-8">
                         <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                             <Briefcase className="w-5 h-5 mr-2 text-blue-500"/> Job Description

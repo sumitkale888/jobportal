@@ -19,30 +19,35 @@ import java.util.List;
 public class JobController {
 
     private final JobService jobService;
-    private final JobMatcherService jobMatcherService; // ✅ Declared ONLY ONCE
+    private final JobMatcherService jobMatcherService;
 
+    // ✅ RECRUITER ONLY: Post Job
     @PostMapping
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<JobResponse> postJob(@RequestBody JobPostRequest request, Principal principal) {
         return ResponseEntity.ok(jobService.postJob(request, principal.getName()));
     }
 
+    // ✅ RECRUITER ONLY: Get My Posted Jobs
     @GetMapping("/my-jobs")
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<List<JobResponse>> getMyJobs(Principal principal) {
         return ResponseEntity.ok(jobService.getJobsByRecruiter(principal.getName()));
     }
 
+    // ✅ PUBLIC/STUDENT: View All Jobs
     @GetMapping
     public ResponseEntity<List<JobResponse>> getAllJobs() {
         return ResponseEntity.ok(jobService.getAllJobs());
     }
     
+    // ✅ PUBLIC/STUDENT: View Single Job
     @GetMapping("/{id}")
     public ResponseEntity<JobResponse> getJobById(@PathVariable Long id) {
         return ResponseEntity.ok(jobService.getJobById(id));
     }
 
+    // ✅ STUDENT ONLY: AI Match
     @GetMapping("/match")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<List<JobMatchDto>> getMatchingJobs(Principal principal) {

@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { getAllJobs } from '../api/jobApi';
-import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { MapPin, DollarSign, Building } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Briefcase, MapPin, DollarSign } from 'lucide-react';
 
 const StudentDashboard = () => {
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null); // Added error state
 
     useEffect(() => {
         loadJobs();
@@ -15,9 +16,16 @@ const StudentDashboard = () => {
     const loadJobs = async () => {
         try {
             const data = await getAllJobs();
-            setJobs(data);
-        } catch (error) {
-            console.error("Failed to fetch jobs", error);
+            console.log("🔥 DEBUG: Received Jobs from Backend:", data); // Check Console!
+            if (Array.isArray(data)) {
+                setJobs(data);
+            } else {
+                console.error("API did not return an array:", data);
+                setJobs([]);
+            }
+        } catch (err) {
+            console.error("Failed to fetch jobs", err);
+            setError("Failed to load jobs. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -26,50 +34,45 @@ const StudentDashboard = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             <Navbar />
-            
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-6">Latest Job Openings</h1>
+            <div className="max-w-7xl mx-auto px-4 py-8">
+                <h1 className="text-3xl font-bold text-gray-800 mb-8">Latest Job Openings</h1>
+
+                {loading && <p>Loading jobs...</p>}
+                {error && <p className="text-red-500">{error}</p>}
                 
-                {loading ? (
-                    <p>Loading jobs...</p>
-                ) : (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {jobs.length === 0 ? (
-                            <p className="text-gray-500">No jobs available at the moment.</p>
-                        ) : (
-                            jobs.map((job) => (
-                                <div key={job.id} className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
-                                    <h3 className="text-xl font-bold text-blue-600 mb-2">{job.title}</h3>
-                                    
-                                    <div className="flex items-center text-gray-600 mb-2">
-                                        <Building className="w-4 h-4 mr-2" />
-                                        <span>{job.companyName || "Tech Company"}</span>
-                                    </div>
-
-                                    <div className="flex items-center text-gray-500 text-sm mb-4 space-x-4">
-                                        <span className="flex items-center">
-                                            <MapPin className="w-4 h-4 mr-1" /> {job.location}
-                                        </span>
-                                        <span className="flex items-center">
-                                            <DollarSign className="w-4 h-4 mr-1" /> ${job.salary}
-                                        </span>
-                                    </div>
-                                    
-                                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                                        {job.description}
-                                    </p>
-
-                                    <Link 
-                                        to={`/student/jobs/${job.id}`} 
-                                        className="block w-full text-center bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-                                    >
-                                        View Details
-                                    </Link>
-                                </div>
-                            ))
-                        )}
-                    </div>
+                {!loading && !error && jobs.length === 0 && (
+                    <p className="text-gray-500">No jobs available at the moment.</p>
                 )}
+
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {jobs.map((job) => (
+                        <div key={job.id} className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition">
+                            <h3 className="text-xl font-bold text-gray-800">{job.title}</h3>
+                            <p className="text-gray-600 mb-2 flex items-center">
+                                <Briefcase className="w-4 h-4 mr-1"/> {job.companyName}
+                            </p>
+                            <p className="text-sm text-gray-500 mb-2">
+                                <MapPin className="w-4 h-4 mr-1 inline"/> {job.location}
+                            </p>
+                            <p className="text-sm text-gray-500 mb-4">
+                                <DollarSign className="w-4 h-4 mr-1 inline"/> ${job.salary}
+                            </p>
+                            
+                            {/* Skills Tag */}
+                            <div className="flex flex-wrap gap-2 mb-4">
+                                {(job.requiredSkills || []).slice(0, 3).map((skill, i) => (
+                                    <span key={i} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                        {skill}
+                                    </span>
+                                ))}
+                            </div>
+
+                            <Link to={`/student/jobs/${job.id}`} className="block w-full text-center bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                                View Details
+                            </Link>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

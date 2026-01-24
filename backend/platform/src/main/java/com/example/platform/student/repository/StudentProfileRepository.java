@@ -8,5 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface StudentProfileRepository extends JpaRepository<StudentProfile, Long> {
-    Optional<StudentProfile> findByUserEmail(String email);
+    // This is the method we are using now
+    Optional<StudentProfile> findByUserId(Long userId);
 }

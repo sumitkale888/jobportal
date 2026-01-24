@@ -16,10 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +26,11 @@ public class StudentService {
     private final JobRepository jobRepository;
 
     public StudentProfileDto getProfile(String email) {
-        StudentProfile profile = profileRepository.findByUserEmail(email)
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // ✅ FIX: Find by User ID (More reliable than email)
+        StudentProfile profile = profileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Profile not found. Please complete your profile."));
 
         return mapToDto(profile);
@@ -41,9 +41,10 @@ public class StudentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        StudentProfile profile = profileRepository.findByUserEmail(email)
+        // ✅ FIX: Check if profile exists by User ID, otherwise create NEW
+        StudentProfile profile = profileRepository.findByUserId(user.getId())
                 .orElse(StudentProfile.builder()
-                        .user(user)
+                        .user(user) // Link the User Relationship
                         .skills("")
                         .savedJobs(new ArrayList<>())
                         .build());
@@ -54,26 +55,20 @@ public class StudentService {
         if (request.getGraduationYear() != null) profile.setGraduationYear(request.getGraduationYear());
         if (request.getCgpa() != null) profile.setCgpa(request.getCgpa());
         if (request.getExperience() != null) profile.setExperience(request.getExperience());
-
-        // Update Skills
-        if (request.getSkills() != null) {
-            profile.setSkills(request.getSkills());
-        }
-        
-        // ✅ SAVE THE RESUME URL
-        if (request.getResumeUrl() != null) {
-            profile.setResumeUrl(request.getResumeUrl());
-        }
+        if (request.getSkills() != null) profile.setSkills(request.getSkills());
+        if (request.getResumeUrl() != null) profile.setResumeUrl(request.getResumeUrl());
 
         StudentProfile savedProfile = profileRepository.save(profile);
         return mapToDto(savedProfile);
     }
 
-    // ... (Keep uploadResume code here) ...
     @Transactional
     public String uploadResume(MultipartFile file, String email) throws IOException {
-        StudentProfile profile = profileRepository.findByUserEmail(email)
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        
+        StudentProfile profile = profileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
+                
         profile.setResumeFile(file.getBytes());
         profile.setResumeFileName(file.getOriginalFilename());
         profile.setResumeContentType(file.getContentType());
@@ -83,14 +78,20 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public StudentProfile getProfileEntity(String email) {
-        return profileRepository.findByUserEmail(email)
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        
+        return profileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
     }
 
     // Keep Saved Job methods...
     @Transactional
     public String saveJob(Long jobId, String email) {
-        StudentProfile profile = profileRepository.findByUserEmail(email).orElseThrow(() -> new RuntimeException("Profile not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        
+        StudentProfile profile = profileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                
         Job job = jobRepository.findById(jobId).orElseThrow(() -> new RuntimeException("Job not found"));
         profile.getSavedJobs().add(job);
         profileRepository.save(profile);
@@ -99,20 +100,24 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public List<JobResponse> getSavedJobs(String email) {
-         // Placeholder implementation
+        // Placeholder implementation
         return new ArrayList<>(); 
     }
 
     @Transactional
     public String unsaveJob(Long jobId, String email) {
-        StudentProfile profile = profileRepository.findByUserEmail(email).orElseThrow(() -> new RuntimeException("Profile not found"));
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        
+        StudentProfile profile = profileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Profile not found"));
+                
         profile.getSavedJobs().removeIf(job -> job.getId().equals(jobId));
         profileRepository.save(profile);
         return "Job Unsaved";
     }
 
     // =================================================================
-    // MAPPING (Update this!)
+    // MAPPING
     // =================================================================
     private StudentProfileDto mapToDto(StudentProfile profile) {
         return StudentProfileDto.builder()

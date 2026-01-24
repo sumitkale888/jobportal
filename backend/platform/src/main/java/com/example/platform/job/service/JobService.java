@@ -1,7 +1,5 @@
 package com.example.platform.job.service;
 
-
-
 import com.example.platform.auth.model.User;
 import com.example.platform.auth.repository.UserRepository;
 import com.example.platform.job.dto.JobPostRequest;
@@ -10,6 +8,7 @@ import com.example.platform.job.model.Job;
 import com.example.platform.job.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // ✅ IMPORTANT IMPORT
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,7 +20,8 @@ public class JobService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
 
-    // 1. Post a new Job (Recruiter Only)
+    // 1. Post a new Job
+    @Transactional // ✅ Keeps transaction open for saving
     public JobResponse postJob(JobPostRequest request, String email) {
         User recruiter = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -42,13 +42,15 @@ public class JobService {
     }
 
     // 2. Get All Jobs (For Students)
+    @Transactional(readOnly = true) // ✅ FIXES 500 ERROR: Keeps DB open to fetch Skills/Recruiter
     public List<JobResponse> getAllJobs() {
         return jobRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // 3. Get Jobs by Recruiter (For Recruiter Dashboard)
+    // 3. Get Jobs by Recruiter
+    @Transactional(readOnly = true) // ✅ FIXES 500 ERROR
     public List<JobResponse> getJobsByRecruiter(String email) {
         User recruiter = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -59,13 +61,15 @@ public class JobService {
     }
     
     // 4. Get Single Job Details
+    @Transactional(readOnly = true) // ✅ FIXES 500 ERROR
     public JobResponse getJobById(Long id) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
         return mapToResponse(job);
     }
 
-    // Helper method to convert Entity to DTO
+    // Helper method
+ // Helper method to convert Entity to DTO
     private JobResponse mapToResponse(Job job) {
         return JobResponse.builder()
                 .id(job.getId())
@@ -75,9 +79,11 @@ public class JobService {
                 .location(job.getLocation())
                 .jobType(job.getJobType())
                 .salary(job.getSalary())
-                .requiredSkills(job.getRequiredSkills())
+                // ✅ Handle NULL Skills
+                .requiredSkills(job.getRequiredSkills() != null ? job.getRequiredSkills() : new java.util.ArrayList<>())
                 .postedAt(job.getPostedAt())
-                .recruiterName(job.getPostedBy().getName())
+                // ✅ Handle NULL Recruiter (Prevents 500 Error)
+                .recruiterName(job.getPostedBy() != null ? job.getPostedBy().getName() : "Unknown Recruiter")
                 .build();
     }
 }
