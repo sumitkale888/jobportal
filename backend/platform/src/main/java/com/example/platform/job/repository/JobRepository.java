@@ -5,9 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface JobRepository extends JpaRepository<Job, Long> {
-    // For Students: Get all jobs (built-in findAll)
+    // Correct method to find jobs by recruiter email
+    List<Job> findByPostedByEmailOrderByPostedAtDesc(String email);
     
-    // For Recruiters: Get only their posted jobs
-    List<Job> findByPostedById(Long recruiterId);
+    // For Dashboard Stats
     long countByPostedByEmail(String email);
 }

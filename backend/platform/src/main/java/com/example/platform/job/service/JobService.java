@@ -2,14 +2,15 @@ package com.example.platform.job.service;
 
 import com.example.platform.auth.model.User;
 import com.example.platform.auth.repository.UserRepository;
-import com.example.platform.job.dto.JobPostRequest;
+import com.example.platform.job.dto.JobRequest;
 import com.example.platform.job.dto.JobResponse;
 import com.example.platform.job.model.Job;
 import com.example.platform.job.repository.JobRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // ✅ IMPORTANT IMPORT
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,9 +21,8 @@ public class JobService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
 
-    // 1. Post a new Job
-    @Transactional // ✅ Keeps transaction open for saving
-    public JobResponse postJob(JobPostRequest request, String email) {
+    @Transactional
+    public JobResponse postJob(JobRequest request, String email) {
         User recruiter = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -31,45 +31,67 @@ public class JobService {
                 .description(request.getDescription())
                 .companyName(request.getCompanyName())
                 .location(request.getLocation())
-                .jobType(request.getJobType())
                 .salary(request.getSalary())
+                .jobType(request.getJobType())
                 .requiredSkills(request.getRequiredSkills())
                 .postedBy(recruiter)
                 .build();
 
-        Job savedJob = jobRepository.save(job);
-        return mapToResponse(savedJob);
+        return mapToResponse(jobRepository.save(job));
     }
 
-    // 2. Get All Jobs (For Students)
-    @Transactional(readOnly = true) // ✅ FIXES 500 ERROR: Keeps DB open to fetch Skills/Recruiter
+    @Transactional(readOnly = true)
     public List<JobResponse> getAllJobs() {
         return jobRepository.findAll().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    // 3. Get Jobs by Recruiter
-    @Transactional(readOnly = true) // ✅ FIXES 500 ERROR
+    @Transactional(readOnly = true)
     public List<JobResponse> getJobsByRecruiter(String email) {
-        User recruiter = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        return jobRepository.findByPostedById(recruiter.getId()).stream()
+        // ✅ Safe Fetch
+        return jobRepository.findByPostedByEmailOrderByPostedAtDesc(email).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-    
-    // 4. Get Single Job Details
-    @Transactional(readOnly = true) // ✅ FIXES 500 ERROR
+
+    @Transactional(readOnly = true)
     public JobResponse getJobById(Long id) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
         return mapToResponse(job);
     }
 
-    // Helper method
- // Helper method to convert Entity to DTO
+    @Transactional
+    public void deleteJob(Long jobId, String email) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+        
+        if (job.getPostedBy() != null && !job.getPostedBy().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized");
+        }
+        jobRepository.delete(job);
+    }
+
+    @Transactional
+    public JobResponse updateJob(Long jobId, JobRequest request, String email) {
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+        
+        if (job.getPostedBy() != null && !job.getPostedBy().getEmail().equals(email)) {
+            throw new RuntimeException("Unauthorized");
+        }
+
+        job.setTitle(request.getTitle());
+        job.setDescription(request.getDescription());
+        job.setLocation(request.getLocation());
+        job.setSalary(request.getSalary());
+        job.setJobType(request.getJobType());
+        job.setRequiredSkills(request.getRequiredSkills());
+        return mapToResponse(jobRepository.save(job));
+    }
+
+    // ✅ SAFE MAPPER: Handles nulls explicitly to stop 500 errors
     private JobResponse mapToResponse(Job job) {
         return JobResponse.builder()
                 .id(job.getId())
@@ -77,13 +99,12 @@ public class JobService {
                 .description(job.getDescription())
                 .companyName(job.getCompanyName())
                 .location(job.getLocation())
-                .jobType(job.getJobType())
                 .salary(job.getSalary())
-                // ✅ Handle NULL Skills
-                .requiredSkills(job.getRequiredSkills() != null ? job.getRequiredSkills() : new java.util.ArrayList<>())
+                .jobType(job.getJobType()) 
+                .requiredSkills(job.getRequiredSkills() != null ? job.getRequiredSkills() : new ArrayList<>())
                 .postedAt(job.getPostedAt())
-                // ✅ Handle NULL Recruiter (Prevents 500 Error)
-                .recruiterName(job.getPostedBy() != null ? job.getPostedBy().getName() : "Unknown Recruiter")
+                .postedByEmail(job.getPostedBy() != null ? job.getPostedBy().getEmail() : "Unknown")
+                .recruiterName(job.getPostedBy() != null ? job.getPostedBy().getName() : "Unknown")
                 .build();
     }
 }

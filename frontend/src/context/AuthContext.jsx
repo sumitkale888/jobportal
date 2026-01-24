@@ -1,27 +1,47 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { jwtDecode } from 'jwt-decode'; 
+import { jwtDecode } from "jwt-decode";
 
-// 1. Create Context (Remove 'export' to fix the error)
-const AuthContext = createContext();
+export const AuthContext = createContext();
+
+export const useAuth = () => {
+    return useContext(AuthContext);
+};
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // ✅ Helper function to extract role correctly (Same logic as Login.jsx)
+    const getRoleFromToken = (decoded) => {
+        let role = decoded.roles || decoded.role || decoded.authorities;
+        
+        if (Array.isArray(role)) {
+            role = role[0];
+        }
+        if (typeof role === 'object' && role.authority) {
+            role = role.authority;
+        }
+        return role; // Returns "RECRUITER", "ROLE_RECRUITER", "STUDENT", etc.
+    };
 
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
             try {
                 const decoded = jwtDecode(token);
-                // Ensure we handle the specific structure of your JWT
-                setUser({ 
-                    email: decoded.sub, 
-                    role: decoded.roles || decoded.role, // Handle potential key differences
-                    token 
-                });
+                const currentTime = Date.now() / 1000;
+                if (decoded.exp < currentTime) {
+                    logout();
+                } else {
+                    // ✅ Use the helper function here
+                    setUser({
+                        email: decoded.sub,
+                        role: getRoleFromToken(decoded) 
+                    });
+                }
             } catch (error) {
                 console.error("Invalid token", error);
-                localStorage.removeItem('token');
+                logout();
             }
         }
         setLoading(false);
@@ -30,27 +50,22 @@ export const AuthProvider = ({ children }) => {
     const login = (token) => {
         localStorage.setItem('token', token);
         const decoded = jwtDecode(token);
-        setUser({ 
-            email: decoded.sub, 
-            role: decoded.roles || decoded.role, 
-            token 
+        
+        // ✅ And use the helper function here too
+        setUser({
+            email: decoded.sub,
+            role: getRoleFromToken(decoded)
         });
     };
 
     const logout = () => {
         localStorage.removeItem('token');
         setUser(null);
-        window.location.href = '/login';
     };
 
     return (
         <AuthContext.Provider value={{ user, login, logout, loading }}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     );
-};
-
-// 2. Export a Custom Hook instead of the Context
-export const useAuth = () => {
-    return useContext(AuthContext);
 };

@@ -1,27 +1,22 @@
 package com.example.platform.job.dto;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import java.time.LocalDateTime;
+import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Data
-@Builder
-public class JobResponse {
-    private Long id;
+@NoArgsConstructor
+@AllArgsConstructor
+public class JobRequest {
     private String title;
     private String description;
     private String companyName;
     private String location;
     private Double salary;
     
-    // ✅ String to match Entity
+    // ✅ String ensures compatibility with existing DB data
     private String jobType; 
     
     private List<String> requiredSkills;
-    private LocalDateTime postedAt;
-    
-    // ✅ Added to fix "undefined method" error
-    private String postedByEmail; 
-    private String recruiterName;
 }

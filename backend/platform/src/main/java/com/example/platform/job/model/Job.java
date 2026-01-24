@@ -4,7 +4,6 @@ import com.example.platform.auth.model.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,40 +14,30 @@ import java.util.List;
 @Entity
 @Table(name = "jobs")
 public class Job {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String title;
-
-    @Column(columnDefinition = "TEXT", length = 5000, nullable = false)
+    
+    @Column(length = 2000) 
     private String description;
-
-    @Column(nullable = false)
+    
     private String companyName;
-
-    @Column(nullable = false)
     private String location;
-
-    @Column(nullable = false)
-    private String jobType;
-
-    @Column(nullable = false)
     private Double salary;
 
-    // ✅ FIX 1: Change to EAGER so skills are always loaded
-    @ElementCollection(fetch = FetchType.EAGER) 
-    @CollectionTable(name = "job_skills", joinColumns = @JoinColumn(name = "job_id"))
-    @Column(name = "skill")
+    private String jobType;
+
+    // ✅ FIX: Add (fetch = FetchType.EAGER)
+    // This forces the "skills" to load immediately, preventing the 500 Error.
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> requiredSkills;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recruiter_id")
+    private User postedBy;
 
     @CreationTimestamp
     private LocalDateTime postedAt;
-
-    // ✅ FIX 2: Change to EAGER so Recruiter Name is always loaded
-    @ManyToOne(fetch = FetchType.EAGER) 
-    @JoinColumn(name = "recruiter_id", nullable = false)
-    private User postedBy;
 }

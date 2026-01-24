@@ -1,9 +1,7 @@
 package com.example.platform.job.controller;
 
-import com.example.platform.job.dto.JobMatchDto;
-import com.example.platform.job.dto.JobPostRequest;
+import com.example.platform.job.dto.JobRequest;
 import com.example.platform.job.dto.JobResponse;
-import com.example.platform.job.service.JobMatcherService;
 import com.example.platform.job.service.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,41 +14,45 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:5173")
 public class JobController {
 
     private final JobService jobService;
-    private final JobMatcherService jobMatcherService;
 
-    // ✅ RECRUITER ONLY: Post Job
     @PostMapping
     @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<JobResponse> postJob(@RequestBody JobPostRequest request, Principal principal) {
+    public ResponseEntity<JobResponse> postJob(@RequestBody JobRequest request, Principal principal) {
         return ResponseEntity.ok(jobService.postJob(request, principal.getName()));
     }
 
-    // ✅ RECRUITER ONLY: Get My Posted Jobs
+    @GetMapping
+    public ResponseEntity<List<JobResponse>> getAllJobs() {
+        return ResponseEntity.ok(jobService.getAllJobs());
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<JobResponse> getJobById(@PathVariable Long id) {
+        return ResponseEntity.ok(jobService.getJobById(id));
+    }
+
     @GetMapping("/my-jobs")
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<List<JobResponse>> getMyJobs(Principal principal) {
         return ResponseEntity.ok(jobService.getJobsByRecruiter(principal.getName()));
     }
 
-    // ✅ PUBLIC/STUDENT: View All Jobs
-    @GetMapping
-    public ResponseEntity<List<JobResponse>> getAllJobs() {
-        return ResponseEntity.ok(jobService.getAllJobs());
-    }
-    
-    // ✅ PUBLIC/STUDENT: View Single Job
-    @GetMapping("/{id}")
-    public ResponseEntity<JobResponse> getJobById(@PathVariable Long id) {
-        return ResponseEntity.ok(jobService.getJobById(id));
+    // ✅ FEATURE: Delete Job
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<String> deleteJob(@PathVariable Long id, Principal principal) {
+        jobService.deleteJob(id, principal.getName());
+        return ResponseEntity.ok("Job deleted successfully");
     }
 
-    // ✅ STUDENT ONLY: AI Match
-    @GetMapping("/match")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<List<JobMatchDto>> getMatchingJobs(Principal principal) {
-        return ResponseEntity.ok(jobMatcherService.getMatchingJobs(principal.getName()));
+    // ✅ FEATURE: Update Job
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<JobResponse> updateJob(@PathVariable Long id, @RequestBody JobRequest request, Principal principal) {
+        return ResponseEntity.ok(jobService.updateJob(id, request, principal.getName()));
     }
 }

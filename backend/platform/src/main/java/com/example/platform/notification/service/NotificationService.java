@@ -5,6 +5,7 @@ import com.example.platform.auth.repository.UserRepository;
 import com.example.platform.notification.model.Notification;
 import com.example.platform.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
@@ -20,13 +21,16 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
-    // The Main Method to trigger a notification
-    @Async // Run in background so it doesn't slow down the main app
+    // Inject the email from application.properties to avoid hardcoding
+    @Value("${spring.mail.username}")
+    private String senderEmail;
+
+    @Async // Runs in background so the user doesn't wait for email to send
     public void sendNotification(String recipientEmail, String subject, String messageBody) {
         User user = userRepository.findByEmail(recipientEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 1. Save to Database (In-App Notification)
+        // 1. Save In-App Notification (Database)
         Notification notification = Notification.builder()
                 .recipient(user)
                 .subject(subject)
@@ -35,18 +39,20 @@ public class NotificationService {
                 .build();
         notificationRepository.save(notification);
 
-        // 2. Send Real Email
+        // 2. Send Real Email (SMTP)
         try {
             SimpleMailMessage email = new SimpleMailMessage();
-            email.setFrom("YOUR_REAL_EMAIL@gmail.com");
+            email.setFrom(senderEmail);
             email.setTo(recipientEmail);
             email.setSubject(subject);
             email.setText(messageBody);
-            mailSender.send(email); // <--- Uncomment this line when you have real SMTP config
-            System.out.println("EMAILING " + recipientEmail + ": " + subject); // For testing
+            
+            mailSender.send(email); // ✅ This sends the actual email!
+            
+            System.out.println("✅ Email Sent Successfully to: " + recipientEmail);
         } catch (Exception e) {
-            System.err.println("Failed to send email: " + e.getMessage());
-            e.printStackTrace();
+            // Log error but don't crash the application
+            System.err.println("❌ Failed to send email to " + recipientEmail + ": " + e.getMessage());
         }
     }
 

@@ -8,7 +8,8 @@ import com.example.platform.auth.model.User;
 import com.example.platform.auth.repository.UserRepository;
 import com.example.platform.job.model.Job;
 import com.example.platform.job.repository.JobRepository;
-import com.example.platform.recruiter.dto.ApplicantDto; // ✅ Import ApplicantDto
+import com.example.platform.recruiter.dto.ApplicantDto;
+import com.example.platform.notification.service.NotificationService;
 import com.example.platform.student.model.StudentProfile;
 import com.example.platform.student.repository.StudentProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final StudentProfileRepository studentRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     // 1. STUDENT: Apply for a Job
     @Transactional
@@ -34,7 +36,7 @@ public class ApplicationService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         StudentProfile student = studentRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Student profile not found. Please complete profile first."));
+                .orElseThrow(() -> new RuntimeException("Student profile not found."));
 
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
@@ -50,52 +52,20 @@ public class ApplicationService {
                 .build();
 
         applicationRepository.save(application);
+
+        // Notify Recruiter
+        if (job.getPostedBy() != null) {
+            String recruiterEmail = job.getPostedBy().getEmail();
+            String subject = "New Applicant: " + job.getTitle();
+            String message = "Student " + student.getUser().getName() + " has applied for your job post: " + job.getTitle();
+            notificationService.sendNotification(recruiterEmail, subject, message);
+        }
+
         return "Application submitted successfully!";
     }
 
-    // 2. STUDENT: Get My Applications
-    @Transactional(readOnly = true)
-    public List<ApplicationResponse> getStudentApplications(String studentEmail) {
-        User user = userRepository.findByEmail(studentEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        StudentProfile student = studentRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("Student profile not found"));
-
-        return applicationRepository.findByStudentId(student.getId()).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    // 3. RECRUITER: Get Detailed Applicants for a Job (Corrected Method)
-    @Transactional(readOnly = true)
-    public List<ApplicantDto> getApplicantsForJob(Long jobId, String recruiterEmail) {
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-
-        if (!job.getPostedBy().getEmail().equals(recruiterEmail)) {
-            throw new RuntimeException("Unauthorized: You did not post this job.");
-        }
-
-        return applicationRepository.findByJobId(jobId).stream()
-                .map(app -> ApplicantDto.builder()
-                        .applicationId(app.getId())
-                        .studentId(app.getStudent().getId())
-                        .name(app.getStudent().getUser().getName())
-                        .email(app.getStudent().getUser().getEmail())
-                        .university(app.getStudent().getUniversity())
-                        .degree(app.getStudent().getDegree())
-                        .cgpa(app.getStudent().getCgpa())
-                        .skills(app.getStudent().getSkills())
-                        .experience(app.getStudent().getExperience())
-                        .resumeUrl(app.getStudent().getResumeUrl())
-                        .status(app.getStatus())
-                        .appliedAt(app.getAppliedAt())
-                        .build())
-                .collect(Collectors.toList());
-    }
-
-    // 4. RECRUITER: Update Status
+    // 2. RECRUITER: Update Status (Shortlist/Reject)
+    // ✅ REMOVED DUPLICATE METHOD - Only this one remains
     @Transactional
     public String updateApplicationStatus(Long applicationId, ApplicationStatus newStatus, String recruiterEmail) {
         Application application = applicationRepository.findById(applicationId)
@@ -107,20 +77,53 @@ public class ApplicationService {
 
         application.setStatus(newStatus);
         applicationRepository.save(application);
+
+        // Notify Student
+        String studentEmail = application.getStudent().getUser().getEmail();
+        String jobTitle = application.getJob().getTitle();
+        String subject = "Application Update: " + jobTitle;
+        
+        String message = "Your application status has been updated to: " + newStatus;
+        if (newStatus == ApplicationStatus.SHORTLISTED) {
+            message = "Congratulations! You have been SHORTLISTED for " + jobTitle;
+        } else if (newStatus == ApplicationStatus.REJECTED) {
+            message = "Update on your application for " + jobTitle + ". We have decided not to move forward.";
+        }
+
+        notificationService.sendNotification(studentEmail, subject, message);
+
         return "Status updated to " + newStatus;
     }
 
-    // Helper: Map Entity to DTO (For Student View)
-    private ApplicationResponse mapToResponse(Application app) {
-        return ApplicationResponse.builder()
+    @Transactional(readOnly = true)
+    public List<ApplicationResponse> getStudentApplications(String studentEmail) {
+        User user = userRepository.findByEmail(studentEmail).orElseThrow(() -> new RuntimeException("User not found"));
+        StudentProfile student = studentRepository.findByUserId(user.getId()).orElseThrow(() -> new RuntimeException("Student profile not found"));
+        return applicationRepository.findByStudentId(student.getId()).stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ApplicantDto> getApplicantsForJob(Long jobId, String recruiterEmail) {
+        Job job = jobRepository.findById(jobId).orElseThrow(() -> new RuntimeException("Job not found"));
+        if (!job.getPostedBy().getEmail().equals(recruiterEmail)) throw new RuntimeException("Unauthorized");
+        
+        return applicationRepository.findByJobId(jobId).stream().map(app -> ApplicantDto.builder()
                 .applicationId(app.getId())
-                .jobId(app.getJob().getId())
-                .jobTitle(app.getJob().getTitle())
-                .companyName(app.getJob().getCompanyName())
-                .applicantName(app.getStudent().getUser().getName())
-                .applicantEmail(app.getStudent().getUser().getEmail())
+                .studentId(app.getStudent().getId())
+                .name(app.getStudent().getUser().getName())
+                .email(app.getStudent().getUser().getEmail())
+                .university(app.getStudent().getUniversity())
+                .degree(app.getStudent().getDegree())
+                .cgpa(app.getStudent().getCgpa())
+                .skills(app.getStudent().getSkills())
+                .experience(app.getStudent().getExperience())
+                .resumeUrl(app.getStudent().getResumeUrl())
                 .status(app.getStatus())
                 .appliedAt(app.getAppliedAt())
-                .build();
+                .build()).collect(Collectors.toList());
+    }
+
+    private ApplicationResponse mapToResponse(Application app) {
+        return ApplicationResponse.builder().applicationId(app.getId()).jobId(app.getJob().getId()).jobTitle(app.getJob().getTitle()).companyName(app.getJob().getCompanyName()).applicantName(app.getStudent().getUser().getName()).applicantEmail(app.getStudent().getUser().getEmail()).status(app.getStatus()).appliedAt(app.getAppliedAt()).build();
     }
 }
