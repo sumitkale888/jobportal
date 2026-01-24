@@ -1,8 +1,8 @@
 package com.example.platform.application.controller;
 
-import com.example.platform.application.dto.ApplicationResponse;
 import com.example.platform.application.service.ApplicationService;
 import com.example.platform.common.enums.ApplicationStatus;
+import com.example.platform.recruiter.dto.ApplicantDto; // ✅ Import ApplicantDto
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,14 +19,13 @@ public class RecruiterApplicationController {
 
     private final ApplicationService applicationService;
 
-    // View applicants for a specific Job ID
+    // ✅ Correctly returns List<ApplicantDto>
     @GetMapping("/job/{jobId}")
     @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<List<ApplicationResponse>> getApplicants(@PathVariable Long jobId, Principal principal) {
+    public ResponseEntity<List<ApplicantDto>> getJobApplicants(@PathVariable Long jobId, Principal principal) {
         return ResponseEntity.ok(applicationService.getApplicantsForJob(jobId, principal.getName()));
     }
 
-    // Update status (e.g., Shortlist, Reject)
     @PutMapping("/{applicationId}/status")
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<String> updateStatus(

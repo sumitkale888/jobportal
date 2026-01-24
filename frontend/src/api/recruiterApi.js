@@ -31,3 +31,19 @@ export const getMyPostedJobs = async () => {
     const response = await axiosInstance.get('/jobs/my-jobs');
     return response.data;
 };
+
+// ✅ ADD THESE NEW FUNCTIONS (This fixes your error)
+// =================================================
+
+// Get Applicants for a specific Job
+export const getJobApplicants = async (jobId) => {
+    const response = await axiosInstance.get(`/recruiter/applications/job/${jobId}`);
+    return response.data;
+};
+
+// Update Application Status (Shortlist/Reject)
+export const updateApplicationStatus = async (applicationId, status) => {
+    // status can be: APPLIED, SHORTLISTED, REJECTED
+    const response = await axiosInstance.put(`/recruiter/applications/${applicationId}/status?status=${status}`);
+    return response.data;
+};

@@ -8,7 +8,7 @@ import com.example.platform.auth.model.User;
 import com.example.platform.auth.repository.UserRepository;
 import com.example.platform.job.model.Job;
 import com.example.platform.job.repository.JobRepository;
-// import com.example.platform.notification.service.NotificationService; // Uncomment if you have this
+import com.example.platform.recruiter.dto.ApplicantDto; // ✅ Import ApplicantDto
 import com.example.platform.student.model.StudentProfile;
 import com.example.platform.student.repository.StudentProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,6 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final StudentProfileRepository studentRepository;
     private final UserRepository userRepository;
-    // private final NotificationService notificationService; // Uncomment if needed
 
     // 1. STUDENT: Apply for a Job
     @Transactional
@@ -51,14 +50,10 @@ public class ApplicationService {
                 .build();
 
         applicationRepository.save(application);
-
-        // Notify Recruiter (Optional)
-        // notificationService.sendNotification(...);
-
         return "Application submitted successfully!";
     }
 
-    // 2. STUDENT: Get My Applications (Fixes "Undefined method" error)
+    // 2. STUDENT: Get My Applications
     @Transactional(readOnly = true)
     public List<ApplicationResponse> getStudentApplications(String studentEmail) {
         User user = userRepository.findByEmail(studentEmail)
@@ -72,9 +67,9 @@ public class ApplicationService {
                 .collect(Collectors.toList());
     }
 
-    // 3. RECRUITER: Get Applicants for a specific Job (Fixes "Undefined method" error)
+    // 3. RECRUITER: Get Detailed Applicants for a Job (Corrected Method)
     @Transactional(readOnly = true)
-    public List<ApplicationResponse> getApplicantsForJob(Long jobId, String recruiterEmail) {
+    public List<ApplicantDto> getApplicantsForJob(Long jobId, String recruiterEmail) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
@@ -83,11 +78,24 @@ public class ApplicationService {
         }
 
         return applicationRepository.findByJobId(jobId).stream()
-                .map(this::mapToResponse)
+                .map(app -> ApplicantDto.builder()
+                        .applicationId(app.getId())
+                        .studentId(app.getStudent().getId())
+                        .name(app.getStudent().getUser().getName())
+                        .email(app.getStudent().getUser().getEmail())
+                        .university(app.getStudent().getUniversity())
+                        .degree(app.getStudent().getDegree())
+                        .cgpa(app.getStudent().getCgpa())
+                        .skills(app.getStudent().getSkills())
+                        .experience(app.getStudent().getExperience())
+                        .resumeUrl(app.getStudent().getResumeUrl())
+                        .status(app.getStatus())
+                        .appliedAt(app.getAppliedAt())
+                        .build())
                 .collect(Collectors.toList());
     }
 
-    // 4. RECRUITER: Update Status (Fixes "Undefined method" error)
+    // 4. RECRUITER: Update Status
     @Transactional
     public String updateApplicationStatus(Long applicationId, ApplicationStatus newStatus, String recruiterEmail) {
         Application application = applicationRepository.findById(applicationId)
@@ -99,14 +107,10 @@ public class ApplicationService {
 
         application.setStatus(newStatus);
         applicationRepository.save(application);
-
-        // Notify Student (Optional)
-        // notificationService.sendNotification(...);
-
         return "Status updated to " + newStatus;
     }
 
-    // Helper: Map Entity to DTO
+    // Helper: Map Entity to DTO (For Student View)
     private ApplicationResponse mapToResponse(Application app) {
         return ApplicationResponse.builder()
                 .applicationId(app.getId())

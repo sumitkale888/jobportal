@@ -1,18 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { getRecruiterDashboard } from '../api/recruiterApi';
+import { getRecruiterDashboard, getMyPostedJobs } from '../api/recruiterApi';
 import Navbar from '../components/Navbar';
-import { Briefcase, Users, CheckCircle, Building } from 'lucide-react';
+import { Briefcase, Users, Eye, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const RecruiterDashboard = () => {
     const [stats, setStats] = useState(null);
+    const [jobs, setJobs] = useState([]); // List of jobs
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getRecruiterDashboard()
-            .then(data => setStats(data))
-            .catch(err => console.error("Dashboard error:", err))
-            .finally(() => setLoading(false));
+        const fetchData = async () => {
+            try {
+                const dashboardData = await getRecruiterDashboard();
+                setStats(dashboardData);
+                
+                const jobsData = await getMyPostedJobs(); // Fetch jobs list
+                setJobs(jobsData);
+            } catch (err) {
+                console.error("Error loading dashboard", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
     }, []);
 
     if (loading) return <div className="p-10 text-center">Loading Dashboard...</div>;
@@ -22,49 +33,61 @@ const RecruiterDashboard = () => {
             <Navbar />
             <div className="max-w-7xl mx-auto px-4 py-8">
                 
-                {/* Welcome Header */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-800">
-                        Hello, {stats?.companyName || "Recruiter"} 👋
-                    </h1>
-                    <p className="text-gray-500">Here is what's happening with your jobs today.</p>
+                    <h1 className="text-3xl font-bold text-gray-800">Hello, {stats?.companyName || "Recruiter"} 👋</h1>
+                    <p className="text-gray-500">Manage your jobs and applicants here.</p>
                 </div>
 
-                {/* Stats Grid */}
+                {/* Stats Cards (Keep existing code here) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500 flex items-center">
-                        <Briefcase className="w-10 h-10 text-blue-500 mr-4" />
-                        <div>
-                            <p className="text-gray-500 text-sm">Total Jobs Posted</p>
-                            <h2 className="text-3xl font-bold">{stats?.totalJobsPosted || 0}</h2>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-lg shadow border-l-4 border-green-500 flex items-center">
-                        <CheckCircle className="w-10 h-10 text-green-500 mr-4" />
-                        <div>
-                            <p className="text-gray-500 text-sm">Active Jobs</p>
-                            <h2 className="text-3xl font-bold">{stats?.activeJobs || 0}</h2>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500 flex items-center">
-                        <Users className="w-10 h-10 text-purple-500 mr-4" />
-                        <div>
-                            <p className="text-gray-500 text-sm">Total Applicants</p>
-                            <h2 className="text-3xl font-bold">{stats?.totalApplicants || 0}</h2>
-                        </div>
-                    </div>
+                     {/* ... (Your existing stats cards code) ... */}
+                     <div className="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500">
+                        <p className="text-gray-500">Total Jobs</p>
+                        <h2 className="text-3xl font-bold">{stats?.totalJobsPosted}</h2>
+                     </div>
+                     <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
+                        <p className="text-gray-500">Total Applicants</p>
+                        <h2 className="text-3xl font-bold">{stats?.totalApplicants}</h2>
+                     </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Link to="/recruiter/post-job" className="bg-blue-600 text-white p-4 rounded-lg text-center font-bold hover:bg-blue-700 transition">
-                        + Post a New Job
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold text-gray-800">Your Posted Jobs</h2>
+                    <Link to="/recruiter/post-job" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        + Post New Job
                     </Link>
-                    <Link to="/recruiter/profile" className="bg-white border border-gray-300 text-gray-700 p-4 rounded-lg text-center font-bold hover:bg-gray-50 transition">
-                        Manage Company Profile
-                    </Link>
+                </div>
+
+                {/* ✅ JOB LIST WITH "VIEW APPLICANTS" BUTTON */}
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-gray-100 text-gray-600 uppercase text-sm font-semibold">
+                            <tr>
+                                <th className="p-4">Job Title</th>
+                                <th className="p-4">Location</th>
+                                <th className="p-4">Posted Date</th>
+                                <th className="p-4 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody className="text-gray-700">
+                            {jobs.map((job) => (
+                                <tr key={job.id} className="border-b hover:bg-gray-50">
+                                    <td className="p-4 font-medium">{job.title}</td>
+                                    <td className="p-4">{job.location}</td>
+                                    <td className="p-4">{new Date(job.postedAt).toLocaleDateString()}</td>
+                                    <td className="p-4 text-center">
+                                        <Link 
+                                            to={`/recruiter/jobs/${job.id}/applicants`} 
+                                            className="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold"
+                                        >
+                                            <Users className="w-4 h-4 mr-2"/> View Applicants <ArrowRight className="w-4 h-4 ml-1"/>
+                                        </Link>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {jobs.length === 0 && <p className="p-6 text-center text-gray-500">No jobs posted yet.</p>}
                 </div>
             </div>
         </div>

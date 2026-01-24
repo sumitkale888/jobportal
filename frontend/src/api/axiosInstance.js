@@ -18,5 +18,16 @@ axiosInstance.interceptors.request.use(
     },
     (error) => Promise.reject(error)
 );
+// Get Applicants for a specific Job
+export const getJobApplicants = async (jobId) => {
+    const response = await axiosInstance.get(`/recruiter/applications/job/${jobId}`);
+    return response.data;
+};
 
+// Update Application Status (Shortlist/Reject)
+export const updateApplicationStatus = async (applicationId, status) => {
+    // status can be: APPLIED, SHORTLISTED, REJECTED
+    const response = await axiosInstance.put(`/recruiter/applications/${applicationId}/status?status=${status}`);
+    return response.data;
+};
 export default axiosInstance;
