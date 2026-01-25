@@ -55,4 +55,9 @@ public class JobController {
     public ResponseEntity<JobResponse> updateJob(@PathVariable Long id, @RequestBody JobRequest request, Principal principal) {
         return ResponseEntity.ok(jobService.updateJob(id, request, principal.getName()));
     }
+    // ✅ SEARCH ENDPOINT
+    @GetMapping("/search")
+    public ResponseEntity<List<JobResponse>> searchJobs(@RequestParam("keyword") String keyword) {
+        return ResponseEntity.ok(jobService.searchJobs(keyword));
+    }
 }

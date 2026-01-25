@@ -107,4 +107,15 @@ public class JobService {
                 .recruiterName(job.getPostedBy() != null ? job.getPostedBy().getName() : "Unknown")
                 .build();
     }
+    // ✅ SEARCH FEATURE
+    @Transactional(readOnly = true)
+    public List<JobResponse> searchJobs(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllJobs(); // Return all if search is empty
+        }
+        return jobRepository.findByTitleContainingIgnoreCaseOrLocationContainingIgnoreCase(keyword, keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 }

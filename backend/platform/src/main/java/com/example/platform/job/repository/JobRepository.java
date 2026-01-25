@@ -10,4 +10,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     
     // For Dashboard Stats
     long countByPostedByEmail(String email);
+
+    List<Job> findByTitleContainingIgnoreCaseOrLocationContainingIgnoreCase(String title, String location);
 }
