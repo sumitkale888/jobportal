@@ -2,6 +2,7 @@ package com.example.platform.job.service;
 
 import com.example.platform.auth.model.User;
 import com.example.platform.auth.repository.UserRepository;
+import com.example.platform.common.enums.JobType;
 import com.example.platform.job.dto.JobRequest;
 import com.example.platform.job.dto.JobResponse;
 import com.example.platform.job.model.Job;
@@ -107,14 +108,21 @@ public class JobService {
                 .recruiterName(job.getPostedBy() != null ? job.getPostedBy().getName() : "Unknown")
                 .build();
     }
-    // ✅ SEARCH FEATURE
-    @Transactional(readOnly = true)
-    public List<JobResponse> searchJobs(String keyword) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return getAllJobs(); // Return all if search is empty
+   @Transactional(readOnly = true)
+    public List<JobResponse> searchJobs(String title, String location, String type, String skill) {
+        
+        // Convert String type to Enum safely
+        JobType jobTypeEnum = null;
+        if (type != null && !type.isEmpty()) {
+            try {
+                jobTypeEnum = JobType.valueOf(type.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Ignore invalid enum values (treat as null)
+            }
         }
-        return jobRepository.findByTitleContainingIgnoreCaseOrLocationContainingIgnoreCase(keyword, keyword)
-                .stream()
+
+        // Call the custom query
+        return jobRepository.searchJobs(title, location, jobTypeEnum, skill).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }

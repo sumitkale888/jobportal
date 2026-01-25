@@ -56,8 +56,13 @@ public class JobController {
         return ResponseEntity.ok(jobService.updateJob(id, request, principal.getName()));
     }
     // ✅ SEARCH ENDPOINT
-    @GetMapping("/search")
-    public ResponseEntity<List<JobResponse>> searchJobs(@RequestParam("keyword") String keyword) {
-        return ResponseEntity.ok(jobService.searchJobs(keyword));
+   @GetMapping("/search")
+    public ResponseEntity<List<JobResponse>> searchJobs(
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "location", required = false) String location,
+            @RequestParam(value = "type", required = false) String type,
+            @RequestParam(value = "skill", required = false) String skill
+    ) {
+        return ResponseEntity.ok(jobService.searchJobs(title, location, type, skill));
     }
 }
