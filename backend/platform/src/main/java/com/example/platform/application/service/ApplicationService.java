@@ -126,4 +126,28 @@ public class ApplicationService {
     private ApplicationResponse mapToResponse(Application app) {
         return ApplicationResponse.builder().applicationId(app.getId()).jobId(app.getJob().getId()).jobTitle(app.getJob().getTitle()).companyName(app.getJob().getCompanyName()).applicantName(app.getStudent().getUser().getName()).applicantEmail(app.getStudent().getUser().getEmail()).status(app.getStatus()).appliedAt(app.getAppliedAt()).build();
     }
+    // ... inside ApplicationService ...
+
+    // ✅ FEATURE: Student Withdraw Application
+// ... inside ApplicationService class ...
+
+    @Transactional
+    public void withdrawApplication(Long applicationId, String studentEmail) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        // Security Check
+        if (!application.getStudent().getUser().getEmail().equals(studentEmail)) {
+            throw new RuntimeException("Unauthorized: You cannot withdraw this application.");
+        }
+
+        // ✅ LOGIC: Allow deleting if APPLIED or REJECTED. 
+        // Prevent deleting if SHORTLISTED (recruiter is interested).
+        if (application.getStatus() == ApplicationStatus.SHORTLISTED || 
+            application.getStatus() == ApplicationStatus.INTERVIEW_SCHEDULED) {
+            throw new RuntimeException("Cannot withdraw application. You are shortlisted/interviewing.");
+        }
+
+        applicationRepository.delete(application);
+    }
 }

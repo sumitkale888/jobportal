@@ -11,3 +11,7 @@ export const getMyApplications = async () => {
     const response = await axiosInstance.get('/student/applications');
     return response.data;
 };
+export const withdrawApplication = async (applicationId) => {
+    const response = await axiosInstance.delete(`/student/applications/${applicationId}`);
+    return response.data;
+};

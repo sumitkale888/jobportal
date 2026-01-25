@@ -4,6 +4,7 @@ import com.example.platform.application.dto.ApplicationResponse;
 import com.example.platform.application.service.ApplicationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*; // Includes @CrossOrigin
 
 import java.security.Principal;
@@ -32,5 +33,13 @@ public class ApplicationController {
     @GetMapping
     public ResponseEntity<List<ApplicationResponse>> getMyApplications(Principal principal) {
         return ResponseEntity.ok(applicationService.getStudentApplications(principal.getName()));
+    }
+    // ... inside your Controller ...
+
+   @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public ResponseEntity<String> withdrawApplication(@PathVariable Long id, Principal principal) {
+        applicationService.withdrawApplication(id, principal.getName());
+        return ResponseEntity.ok("Application withdrawn/deleted successfully");
     }
 }
