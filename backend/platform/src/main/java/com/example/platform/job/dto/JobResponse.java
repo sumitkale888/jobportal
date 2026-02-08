@@ -24,4 +24,6 @@ public class JobResponse {
     // ✅ Added to fix "undefined method" error
     private String postedByEmail; 
     private String recruiterName;
+    private String companyLogo;       // Base64 Encoded String
+    private String logoContentType;
 }

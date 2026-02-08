@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getAllJobs, searchJobs } from '../api/studentApi';
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
-import { Briefcase, MapPin, Search, Filter, X, DollarSign, Clock, Building2, ChevronRight } from 'lucide-react';
+import { Briefcase, MapPin, Search, Filter, X, DollarSign, Clock, Building2, ChevronRight ,RotateCcw,  ChevronDown} from 'lucide-react';
 
 const StudentDashboard = () => {
     const [jobs, setJobs] = useState([]);
@@ -184,94 +184,72 @@ const StudentDashboard = () => {
                     </div>
                 </div>
 
-                {/* 📋 JOB LISTINGS GRID */}
-                <div>
+               {/* ✅ JOB LISTINGS */}
+                <div className="max-w-6xl mx-auto">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-24">
-                             <div className="relative">
-                                <div className="w-12 h-12 rounded-full border-4 border-slate-100 border-t-indigo-600 animate-spin"></div>
-                             </div>
-                             <p className="mt-4 text-slate-400 font-medium">Curating opportunities...</p>
-                        </div>
+                        <div className="text-center py-20 text-gray-500">Searching...</div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {jobs.length === 0 ? (
-                                <div className="col-span-full py-24 text-center">
-                                    <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-100 rounded-full mb-6">
-                                        <Search className="w-10 h-10 text-slate-400" />
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-slate-800 mb-2">No jobs found</h3>
-                                    <p className="text-slate-500 max-w-md mx-auto mb-8">We couldn't find any matches for your search. Try broadening your terms or clearing filters.</p>
-                                    <button onClick={clearFilters} className="text-indigo-600 font-bold hover:text-indigo-800 underline underline-offset-4">
-                                        View All Jobs
-                                    </button>
-                                </div>
-                            ) : (
-                                jobs.map((job) => (
-                                    <div key={job.id} className="group bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full relative">
-                                        
-                                        {/* Card Header */}
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="p-2.5 bg-indigo-50 rounded-xl group-hover:bg-indigo-600 transition-colors duration-300">
-                                                <Building2 className="w-6 h-6 text-indigo-600 group-hover:text-white transition-colors" />
+                            {jobs.map((job) => (
+                                <div key={job.id} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition border border-gray-100 flex flex-col justify-between h-full group">
+                                    <div>
+                                        <div className="flex justify-between items-start mb-3">
+                                            
+                                            {/* ✅ LOGO LOGIC */}
+                                            <div className="flex items-center gap-3">
+                                                {job.companyLogo ? (
+                                                    <img 
+                                                        src={`data:${job.logoContentType};base64,${job.companyLogo}`} 
+                                                        alt={job.companyName} 
+                                                        className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-200"
+                                                    />
+                                                ) : (
+                                                    <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                                        <Briefcase className="w-6 h-6" />
+                                                    </div>
+                                                )}
+                                                
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-gray-800 group-hover:text-blue-600 transition line-clamp-1" title={job.title}>
+                                                        {job.title}
+                                                    </h3>
+                                                    <p className="text-sm text-gray-500">{job.companyName}</p>
+                                                </div>
                                             </div>
+
                                             {job.jobType && (
-                                                <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-slate-100 text-slate-600 border border-slate-200">
-                                                    {job.jobType.replace(/_/g, " ")}
+                                                <span className="text-[10px] uppercase font-bold bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                                    {job.jobType.replace("_", " ")}
                                                 </span>
                                             )}
                                         </div>
-
-                                        {/* Content */}
-                                        <div className="mb-4">
-                                            <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1 mb-1">
-                                                {job.title}
-                                            </h3>
-                                            <p className="text-sm font-medium text-slate-500 mb-3">
-                                                {job.companyName}
-                                            </p>
-                                            
-                                            <div className="flex items-center text-xs font-medium text-slate-500">
-                                                <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400" />
-                                                {job.location}
-                                            </div>
+                                        
+                                        <div className="text-sm text-gray-600 mb-4 ml-1">
+                                            <p className="flex items-center"><MapPin className="w-4 h-4 mr-2 text-gray-400"/> {job.location}</p>
                                         </div>
 
-                                        {/* Skills */}
                                         <div className="flex flex-wrap gap-2 mb-6">
                                             {job.requiredSkills.slice(0, 3).map((skill, index) => (
-                                                <span key={index} className="px-2.5 py-1 rounded-md bg-slate-50 border border-slate-100 text-slate-600 text-xs font-semibold">
+                                                <span key={index} className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded font-medium">
                                                     {skill}
                                                 </span>
                                             ))}
-                                            {job.requiredSkills.length > 3 && (
-                                                <span className="px-2 py-1 text-xs text-slate-400 font-medium">
-                                                    +{job.requiredSkills.length - 3}
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {/* Footer */}
-                                        <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                                            <div>
-                                                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Salary</p>
-                                                <p className="text-sm font-bold text-slate-900 flex items-center">
-                                                    <DollarSign className="w-3.5 h-3.5 mr-0.5 text-emerald-500" />
-                                                    {job.salary ? job.salary.toLocaleString() : 'N/A'}
-                                                </p>
-                                            </div>
-                                            
-                                            <Link 
-                                                to={`/student/jobs/${job.id}`} 
-                                                className="group/btn flex items-center gap-2 bg-slate-900 text-white pl-4 pr-3 py-2 rounded-lg text-sm font-bold hover:bg-indigo-600 transition-all duration-300"
-                                            >
-                                                Details
-                                                <ChevronRight className="w-4 h-4 text-slate-400 group-hover/btn:text-white transition-colors" />
-                                            </Link>
                                         </div>
                                     </div>
-                                ))
-                            )}
+                                    
+                                    <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                                        <span className="font-bold text-gray-900">
+                                            ${job.salary ? job.salary.toLocaleString() : 'N/A'}
+                                        </span>
+                                        <Link 
+                                            to={`/student/jobs/${job.id}`} 
+                                            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition"
+                                        >
+                                            View Details
+                                        </Link>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -279,5 +257,4 @@ const StudentDashboard = () => {
         </div>
     );
 };
-
 export default StudentDashboard;

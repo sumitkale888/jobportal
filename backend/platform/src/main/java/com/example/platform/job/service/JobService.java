@@ -7,6 +7,8 @@ import com.example.platform.job.dto.JobRequest;
 import com.example.platform.job.dto.JobResponse;
 import com.example.platform.job.model.Job;
 import com.example.platform.job.repository.JobRepository;
+import com.example.platform.recruiter.model.RecruiterProfile; // ✅ Import
+import com.example.platform.recruiter.repository.RecruiterProfileRepository; // ✅ Import
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Base64;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class JobService {
 
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
+    private final RecruiterProfileRepository recruiterProfileRepository;
 
     @Transactional
     public JobResponse postJob(JobRequest request, String email) {
@@ -94,6 +98,19 @@ public class JobService {
 
     // ✅ SAFE MAPPER: Handles nulls explicitly to stop 500 errors
     private JobResponse mapToResponse(Job job) {
+        // 1. Fetch Recruiter Profile to get the logo
+        String logoBase64 = null;
+        String logoType = null;
+
+        if (job.getPostedBy() != null) {
+            RecruiterProfile profile = recruiterProfileRepository.findByUserEmail(job.getPostedBy().getEmail()).orElse(null);
+            if (profile != null && profile.getCompanyLogo() != null) {
+                // Convert byte[] to Base64 String
+                logoBase64 = Base64.getEncoder().encodeToString(profile.getCompanyLogo());
+                logoType = profile.getLogoContentType();
+            }
+        }
+
         return JobResponse.builder()
                 .id(job.getId())
                 .title(job.getTitle())
@@ -101,11 +118,15 @@ public class JobService {
                 .companyName(job.getCompanyName())
                 .location(job.getLocation())
                 .salary(job.getSalary())
-                .jobType(job.getJobType()) 
+                .jobType(job.getJobType())
                 .requiredSkills(job.getRequiredSkills() != null ? job.getRequiredSkills() : new ArrayList<>())
                 .postedAt(job.getPostedAt())
                 .postedByEmail(job.getPostedBy() != null ? job.getPostedBy().getEmail() : "Unknown")
                 .recruiterName(job.getPostedBy() != null ? job.getPostedBy().getName() : "Unknown")
+                
+                // ✅ Map the Logo
+                .companyLogo(logoBase64)
+                .logoContentType(logoType)
                 .build();
     }
    @Transactional(readOnly = true)
