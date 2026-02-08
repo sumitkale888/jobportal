@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Bell, LogOut, Briefcase } from 'lucide-react';
-import { getMyNotifications } from '../api/notificationApi'; // Removed markRead import as it's not needed here anymore
+import { getMyNotifications } from '../api/notificationApi'; 
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
@@ -44,6 +44,7 @@ const Navbar = () => {
                 <div className="flex items-center space-x-6">
                     {user ? (
                         <>
+                            {/* Links based on Role */}
                             {user.role === 'STUDENT' ? (
                                 <>
                                     <Link to="/student/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Jobs</Link>
@@ -54,6 +55,10 @@ const Navbar = () => {
                             ) : (
                                 <>
                                     <Link to="/recruiter/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Dashboard</Link>
+                                    
+                                    {/* ✅ ADDED: Company Profile Link */}
+                                    <Link to="/recruiter/profile" className="text-gray-600 hover:text-blue-600 font-medium">Company Profile</Link>
+                                    
                                     <Link to="/recruiter/post-job" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-bold">Post Job</Link>
                                 </>
                             )}
