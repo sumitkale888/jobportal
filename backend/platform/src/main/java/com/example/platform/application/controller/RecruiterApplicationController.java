@@ -19,7 +19,7 @@ public class RecruiterApplicationController {
 
     private final ApplicationService applicationService;
 
-    // ✅ Correctly returns List<ApplicantDto>
+
     @GetMapping("/job/{jobId}")
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<List<ApplicantDto>> getJobApplicants(@PathVariable Long jobId, Principal principal) {

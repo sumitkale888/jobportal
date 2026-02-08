@@ -16,6 +16,7 @@ import RecruiterDashboard from "./recruiter/RecruiterDashboard";
 import PostJob from "./recruiter/PostJob";
 import RecruiterProfile from "./recruiter/RecruiterProfile";
 import JobApplicants from "./recruiter/JobApplicants";
+import Notifications from "./pages/Notifications";
 
 const AdminDashboard = () => <div>Admin Dashboard (Coming Soon)</div>;
 
@@ -31,6 +32,9 @@ function App() {
 
           {/* STUDENT ROUTES */}
           {/* ✅ FIX 1: Add 'ROLE_STUDENT' to allowedRoles for safety */}
+          <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'RECRUITER', 'ROLE_STUDENT', 'ROLE_RECRUITER']} />}>
+             <Route path="/notifications" element={<Notifications />} />
+          </Route>
           <Route element={<ProtectedRoute allowedRoles={["STUDENT", "ROLE_STUDENT"]} />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/profile" element={<Profile />} />

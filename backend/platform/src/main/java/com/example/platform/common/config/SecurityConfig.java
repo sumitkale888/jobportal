@@ -34,14 +34,13 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                // 1. Allow Auth endpoints (Login/Register)
+              
                 .requestMatchers("/api/auth/**").permitAll()
-                
-                // 2. ✅ FIX: Allow EVERYONE to VIEW jobs (GET requests only)
+          
                 .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll() 
                 
                 .requestMatchers("/error").permitAll()
-                .anyRequest().authenticated() // Everything else needs login
+                .anyRequest().authenticated() 
             )
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authenticationProvider(authenticationProvider)

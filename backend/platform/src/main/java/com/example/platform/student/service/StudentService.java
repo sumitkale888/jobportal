@@ -29,7 +29,7 @@ public class StudentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ✅ FIX: Find by User ID (More reliable than email)
+       
         StudentProfile profile = profileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Profile not found. Please complete your profile."));
 
@@ -41,7 +41,7 @@ public class StudentService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // ✅ FIX: Check if profile exists by User ID, otherwise create NEW
+     
         StudentProfile profile = profileRepository.findByUserId(user.getId())
                 .orElse(StudentProfile.builder()
                         .user(user) // Link the User Relationship
@@ -100,7 +100,7 @@ public class StudentService {
 
     @Transactional(readOnly = true)
     public List<JobResponse> getSavedJobs(String email) {
-        // Placeholder implementation
+        
         return new ArrayList<>(); 
     }
 
@@ -116,9 +116,7 @@ public class StudentService {
         return "Job Unsaved";
     }
 
-    // =================================================================
-    // MAPPING
-    // =================================================================
+
     private StudentProfileDto mapToDto(StudentProfile profile) {
         return StudentProfileDto.builder()
                 .name(profile.getUser().getName())
@@ -130,7 +128,7 @@ public class StudentService {
                 .skills(profile.getSkills())
                 .experience(profile.getExperience())
                 
-                // ✅ MAP RESUME URL BACK TO FRONTEND
+               
                 .resumeUrl(profile.getResumeUrl())
                 
                 .resumeFileName(profile.getResumeFileName())

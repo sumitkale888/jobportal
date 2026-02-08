@@ -45,7 +45,7 @@ public class StudentProfile {
         joinColumns = @JoinColumn(name = "student_profile_id"),
         inverseJoinColumns = @JoinColumn(name = "job_id")
     )
-    // ✅ ADD @Builder.Default HERE TO FIX THE WARNING
+    
     @Builder.Default 
     private List<Job> savedJobs = new ArrayList<>();
 }

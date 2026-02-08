@@ -55,16 +55,15 @@ public class RecruiterService {
                 .orElse(null);
 
         // Fetch stats from Job Repository
-        // Note: You might need to add countByPostedByEmail to JobRepository
+      
         long totalJobs = jobRepository.countByPostedByEmail(email); 
         
-        // This is a simplified count. In a real app, you'd join with Application table.
-        // For now, we will just return job counts.
+        
         
         return RecruiterDashboardDto.builder()
                 .companyName(profile != null ? profile.getCompanyName() : "Not Set")
                 .totalJobsPosted(totalJobs)
-                .totalApplicants(0) // Requires complex query, keeping 0 for now to keep code simple
+                .totalApplicants(0) 
                 .activeJobs(totalJobs) 
                 .build();
     }

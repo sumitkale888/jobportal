@@ -12,7 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Map; // <--- Import Map
+import java.util.Map; 
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +37,7 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // FIX: Explicitly add the role to the token
+       
         var jwtToken = jwtUtils.generateToken(Map.of("role", user.getRole()), user); 
         
         return AuthResponse.builder()
@@ -58,7 +58,7 @@ public class AuthService {
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
         
-        // FIX: Explicitly add the role to the token here too
+       
         var jwtToken = jwtUtils.generateToken(Map.of("role", user.getRole()), user);
         
         return AuthResponse.builder()

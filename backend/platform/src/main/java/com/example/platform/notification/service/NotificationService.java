@@ -21,16 +21,16 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
-    // Inject the email from application.properties to avoid hardcoding
+
     @Value("${spring.mail.username}")
     private String senderEmail;
 
-    @Async // Runs in background so the user doesn't wait for email to send
+    @Async
     public void sendNotification(String recipientEmail, String subject, String messageBody) {
         User user = userRepository.findByEmail(recipientEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 1. Save In-App Notification (Database)
+       
         Notification notification = Notification.builder()
                 .recipient(user)
                 .subject(subject)
@@ -39,7 +39,7 @@ public class NotificationService {
                 .build();
         notificationRepository.save(notification);
 
-        // 2. Send Real Email (SMTP)
+        
         try {
             SimpleMailMessage email = new SimpleMailMessage();
             email.setFrom(senderEmail);
@@ -47,12 +47,12 @@ public class NotificationService {
             email.setSubject(subject);
             email.setText(messageBody);
             
-            mailSender.send(email); // ✅ This sends the actual email!
+            mailSender.send(email); 
             
-            System.out.println("✅ Email Sent Successfully to: " + recipientEmail);
+            System.out.println(" Email Sent Successfully to: " + recipientEmail);
         } catch (Exception e) {
-            // Log error but don't crash the application
-            System.err.println("❌ Failed to send email to " + recipientEmail + ": " + e.getMessage());
+            
+            System.err.println(" Failed to send email to " + recipientEmail + ": " + e.getMessage());
         }
     }
 

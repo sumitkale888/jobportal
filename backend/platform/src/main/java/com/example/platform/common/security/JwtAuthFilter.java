@@ -51,8 +51,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 if (jwtUtils.isTokenValid(jwt, userDetails)) {
                     
                     String role = jwtUtils.extractClaim(jwt, claims -> claims.get("role", String.class));
-                    
-                    // ✅ FIX: Ensure ROLE_ prefix is added
+               
                     var authorities = role != null 
                         ? List.of(new SimpleGrantedAuthority(role.startsWith("ROLE_") ? role : "ROLE_" + role)) 
                         : userDetails.getAuthorities();

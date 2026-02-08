@@ -64,8 +64,7 @@ public class ApplicationService {
         return "Application submitted successfully!";
     }
 
-    // 2. RECRUITER: Update Status (Shortlist/Reject)
-    // ✅ REMOVED DUPLICATE METHOD - Only this one remains
+
     @Transactional
     public String updateApplicationStatus(Long applicationId, ApplicationStatus newStatus, String recruiterEmail) {
         Application application = applicationRepository.findById(applicationId)
@@ -126,10 +125,10 @@ public class ApplicationService {
     private ApplicationResponse mapToResponse(Application app) {
         return ApplicationResponse.builder().applicationId(app.getId()).jobId(app.getJob().getId()).jobTitle(app.getJob().getTitle()).companyName(app.getJob().getCompanyName()).applicantName(app.getStudent().getUser().getName()).applicantEmail(app.getStudent().getUser().getEmail()).status(app.getStatus()).appliedAt(app.getAppliedAt()).build();
     }
-    // ... inside ApplicationService ...
+    
 
-    // ✅ FEATURE: Student Withdraw Application
-// ... inside ApplicationService class ...
+    // Student Withdraw Application
+
 
     @Transactional
     public void withdrawApplication(Long applicationId, String studentEmail) {
@@ -141,8 +140,7 @@ public class ApplicationService {
             throw new RuntimeException("Unauthorized: You cannot withdraw this application.");
         }
 
-        // ✅ LOGIC: Allow deleting if APPLIED or REJECTED. 
-        // Prevent deleting if SHORTLISTED (recruiter is interested).
+     
         if (application.getStatus() == ApplicationStatus.SHORTLISTED || 
             application.getStatus() == ApplicationStatus.INTERVIEW_SCHEDULED) {
             throw new RuntimeException("Cannot withdraw application. You are shortlisted/interviewing.");

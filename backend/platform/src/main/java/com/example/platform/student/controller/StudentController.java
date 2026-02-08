@@ -80,7 +80,7 @@ public class StudentController {
         return ResponseEntity.ok(studentService.getSavedJobs(principal.getName()));
     }
     
-    // NEW: Unsave a Job
+    
     @DeleteMapping("/saved-jobs/{jobId}")
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<String> unsaveJob(@PathVariable Long jobId, Principal principal) {

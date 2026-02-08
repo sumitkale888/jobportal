@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/student/applications")
 @RequiredArgsConstructor
-// ✅ ADD THIS LINE TO FIX CONNECTION ERRORS
+
 @CrossOrigin(origins = "http://localhost:5173") 
 public class ApplicationController {
 
@@ -34,7 +34,7 @@ public class ApplicationController {
     public ResponseEntity<List<ApplicationResponse>> getMyApplications(Principal principal) {
         return ResponseEntity.ok(applicationService.getStudentApplications(principal.getName()));
     }
-    // ... inside your Controller ...
+   
 
    @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('STUDENT')")

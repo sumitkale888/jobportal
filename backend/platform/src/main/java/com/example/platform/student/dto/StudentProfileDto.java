@@ -13,7 +13,7 @@ public class StudentProfileDto {
     private String name;
     private String email;
     
-    // ✅ NEW FIELDS (These were missing!)
+   
     private String university;
     private String degree;
     private String graduationYear;
