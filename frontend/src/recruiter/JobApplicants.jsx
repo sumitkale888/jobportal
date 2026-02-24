@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getJobApplicants, updateApplicationStatus } from '../api/recruiterApi';
+import { getJobApplicants, updateApplicationStatus, downloadResume } from '../api/recruiterApi'; // ✅ Added downloadResume
 import Navbar from '../components/Navbar';
 import { toast } from 'react-toastify';
 import { FileText, Check, X, User, ExternalLink } from 'lucide-react';
@@ -73,12 +73,14 @@ const JobApplicants = () => {
                                                 <p className="mt-1"><span className="font-semibold">CGPA:</span> {app.cgpa}</p>
                                             </div>
 
-                                            {/* Resume Link */}
+                                            {/* ✅ UPDATED: Secure PDF Download Button */}
                                             {app.resumeUrl && (
-                                                <a href={app.resumeUrl} target="_blank" rel="noreferrer" 
-                                                   className="inline-flex items-center mt-3 text-blue-600 hover:underline text-sm font-medium">
-                                                    <FileText className="w-4 h-4 mr-1"/> View Resume <ExternalLink className="w-3 h-3 ml-1"/>
-                                                </a>
+                                                <button 
+                                                    onClick={() => downloadResume(app.studentId)}
+                                                    className="inline-flex items-center mt-3 text-blue-600 hover:text-blue-800 hover:underline text-sm font-bold bg-blue-50 px-3 py-1.5 rounded-md transition"
+                                                >
+                                                    <FileText className="w-4 h-4 mr-1"/> View PDF Resume <ExternalLink className="w-3 h-3 ml-1"/>
+                                                </button>
                                             )}
                                         </div>
 

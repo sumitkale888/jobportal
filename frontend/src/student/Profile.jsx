@@ -6,11 +6,12 @@ import { User, FileText, Code, BookOpen, Award } from "lucide-react";
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
+  const [file, setFile] = useState(null); // ✅ Added state for the PDF file
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     skills: "",
-    resumeUrl: "",
+    resumeUrl: "", // Now acts as a placeholder for the file name
     university: "",
     degree: "",
     graduationYear: "",
@@ -25,12 +26,11 @@ const Profile = () => {
   const loadProfile = async () => {
     try {
       const data = await getStudentProfile();
-      // Pre-fill the form with data from backend
       setFormData({
         name: data.name || "",
         email: data.email || "",
         skills: data.skills || "",
-        resumeUrl: data.resumeUrl || "", // Using resumeFileName as URL placeholder
+        resumeUrl: data.resumeUrl || data.resumeName || "", // Handle old URL or new filename
         university: data.university || "",
         degree: data.degree || "",
         graduationYear: data.graduationYear || "",
@@ -48,10 +48,23 @@ const Profile = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // ✅ UPDATED: Send as FormData instead of JSON
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await updateStudentProfile(formData);
+      const uploadData = new FormData();
+      uploadData.append("university", formData.university);
+      uploadData.append("degree", formData.degree);
+      uploadData.append("cgpa", formData.cgpa);
+      uploadData.append("skills", formData.skills);
+      uploadData.append("experience", formData.experience);
+      
+      // If the user selected a new PDF, attach it
+      if (file) {
+        uploadData.append("resume", file);
+      }
+
+      await updateStudentProfile(uploadData);
       toast.success("Profile Updated Successfully!");
     } catch (error) {
       toast.error("Failed to update profile.");
@@ -157,6 +170,7 @@ const Profile = () => {
                     onChange={handleChange}
                     className="w-full p-3 border rounded-lg"
                     placeholder="9.5"
+                    step="0.01"
                   />
                 </div>
               </div>
@@ -193,18 +207,23 @@ const Profile = () => {
                 />
               </div>
 
+              {/* ✅ UPDATED: Resume File Upload */}
               <div className="mb-8">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <FileText className="inline w-4 h-4 mr-1" /> Resume Link
+                  <FileText className="inline w-4 h-4 mr-1" /> Upload Resume (PDF)
                 </label>
                 <input
-                  type="text"
-                  name="resumeUrl"
-                  value={formData.resumeUrl}
-                  onChange={handleChange}
-                  className="w-full p-3 border rounded-lg"
-                  placeholder="https://drive.google.com/..."
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setFile(e.target.files[0])}
+                  className="w-full p-2 border rounded-lg bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                 />
+                {/* Show current file name if it exists in DB */}
+                {formData.resumeUrl && !file && (
+                  <p className="mt-2 text-sm text-green-600 font-medium">
+                    Current file on record: {formData.resumeUrl}
+                  </p>
+                )}
               </div>
 
               <button

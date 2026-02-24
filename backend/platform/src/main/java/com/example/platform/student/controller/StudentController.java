@@ -10,10 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.*;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/student")
@@ -30,14 +30,29 @@ public class StudentController {
         return ResponseEntity.ok(studentService.getProfile(principal.getName()));
     }
 
-    // Create or Update Profile
-    @PostMapping("/profile")
+    // ... inside StudentController ...
+
+    // ✅ FIXED: Added "/profile" to the mapping
+    @PostMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<StudentProfileDto> updateProfile(@RequestBody StudentProfileDto dto, Principal principal) {
-        return ResponseEntity.ok(studentService.updateProfile(dto, principal.getName()));
+    public ResponseEntity<?> updateProfile(
+            @RequestParam(value = "university", required = false) String university,
+            @RequestParam(value = "degree", required = false) String degree,
+            @RequestParam(value = "cgpa", required = false) Double cgpa,
+            @RequestParam(value = "skills", required = false) String skills,
+            @RequestParam(value = "experience", required = false) String experience,
+            @RequestPart(value = "resume", required = false) MultipartFile resume,
+            Principal principal) {
+        try {
+            studentService.createOrUpdateProfile(principal.getName(), university, degree, cgpa, skills, experience, resume);
+            return ResponseEntity.ok("Profile updated successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Error uploading file");
+        }
     }
 
-    // Upload Resume
+    // Upload Resume (Independent Endpoint)
     @PostMapping(value = "/resume", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<String> uploadResume(@RequestParam("file") MultipartFile file, Principal principal) {
@@ -48,23 +63,20 @@ public class StudentController {
         }
     }
 
-    // Download Resume
-    @GetMapping("/resume")
-    @PreAuthorize("hasAnyRole('STUDENT', 'RECRUITER')")
-    public ResponseEntity<byte[]> downloadResume(Principal principal) {
-        StudentProfile profile = studentService.getProfileEntity(principal.getName());
-        
-        if (profile.getResumeFile() == null) {
+    // ✅ FIXED: PDF Download Endpoint
+    @GetMapping("/resume/{studentId}")
+    public ResponseEntity<byte[]> getResume(@PathVariable Long studentId) {
+        StudentProfile profile = studentService.getResumeByStudentId(studentId);
+
+        if (profile.getResumeData() == null) {
             return ResponseEntity.notFound().build();
         }
 
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + profile.getResumeFileName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + profile.getResumeFileName() + "\"")
                 .contentType(MediaType.parseMediaType(profile.getResumeContentType()))
-                .body(profile.getResumeFile());
+                .body(profile.getResumeData());
     }
-
-    // ... (Existing endpoints) ...
     
     // NEW: Save a Job
     @PostMapping("/saved-jobs/{jobId}")
@@ -79,7 +91,6 @@ public class StudentController {
     public ResponseEntity<List<com.example.platform.job.dto.JobResponse>> getSavedJobs(Principal principal) {
         return ResponseEntity.ok(studentService.getSavedJobs(principal.getName()));
     }
-    
     
     @DeleteMapping("/saved-jobs/{jobId}")
     @PreAuthorize("hasRole('STUDENT')")

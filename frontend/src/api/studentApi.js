@@ -7,9 +7,11 @@ export const getStudentProfile = async () => {
 };
 
 // Create or Update Profile
-export const updateStudentProfile = async (profileData) => {
-    // profileData = { name, skills, resumeUrl, etc. }
-    const response = await axiosInstance.post('/student/profile', profileData);
+export const updateStudentProfile = async (formData) => {
+    // Send as multipart/form-data
+    const response = await axiosInstance.post('/student/profile', formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
     return response.data;
 };
 export const searchJobs = async (filters) => {

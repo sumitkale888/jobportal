@@ -47,3 +47,22 @@ export const updateApplicationStatus = async (applicationId, status) => {
     const response = await axiosInstance.put(`/recruiter/applications/${applicationId}/status?status=${status}`);
     return response.data;
 };
+
+// ✅ ADD THIS FUNCTION
+// ✅ CORRECTED FUNCTION
+export const downloadResume = async (studentId) => {
+    try {
+        // ❌ OLD: axiosInstance.get(`/student/profile/resume/${studentId}`...
+        // ✅ NEW: Removed "/profile" to match the backend controller perfectly
+        const response = await axiosInstance.get(`/student/resume/${studentId}`, {
+            responseType: 'blob' // Crucial for downloading files
+        });
+        
+        // Create a temporary URL to open the PDF in a new tab
+        const fileURL = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+        window.open(fileURL, '_blank');
+    } catch (error) {
+        console.error("Error downloading resume:", error);
+        alert("Could not load the resume. The student might not have uploaded one.");
+    }
+};

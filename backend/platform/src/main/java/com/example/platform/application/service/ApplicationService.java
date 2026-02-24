@@ -29,7 +29,6 @@ public class ApplicationService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
-    // 1. STUDENT: Apply for a Job
     @Transactional
     public String applyForJob(Long jobId, String studentEmail) {
         User user = userRepository.findByEmail(studentEmail)
@@ -63,7 +62,6 @@ public class ApplicationService {
 
         return "Application submitted successfully!";
     }
-
 
     @Transactional
     public String updateApplicationStatus(Long applicationId, ApplicationStatus newStatus, String recruiterEmail) {
@@ -116,7 +114,8 @@ public class ApplicationService {
                 .cgpa(app.getStudent().getCgpa())
                 .skills(app.getStudent().getSkills())
                 .experience(app.getStudent().getExperience())
-                .resumeUrl(app.getStudent().getResumeUrl())
+                // ✅ Passes filename. If null, frontend won't show the "View PDF" button
+                .resumeUrl(app.getStudent().getResumeFileName()) 
                 .status(app.getStatus())
                 .appliedAt(app.getAppliedAt())
                 .build()).collect(Collectors.toList());
@@ -126,21 +125,15 @@ public class ApplicationService {
         return ApplicationResponse.builder().applicationId(app.getId()).jobId(app.getJob().getId()).jobTitle(app.getJob().getTitle()).companyName(app.getJob().getCompanyName()).applicantName(app.getStudent().getUser().getName()).applicantEmail(app.getStudent().getUser().getEmail()).status(app.getStatus()).appliedAt(app.getAppliedAt()).build();
     }
     
-
-    // Student Withdraw Application
-
-
     @Transactional
     public void withdrawApplication(Long applicationId, String studentEmail) {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new RuntimeException("Application not found"));
 
-        // Security Check
         if (!application.getStudent().getUser().getEmail().equals(studentEmail)) {
             throw new RuntimeException("Unauthorized: You cannot withdraw this application.");
         }
 
-     
         if (application.getStatus() == ApplicationStatus.SHORTLISTED || 
             application.getStatus() == ApplicationStatus.INTERVIEW_SCHEDULED) {
             throw new RuntimeException("Cannot withdraw application. You are shortlisted/interviewing.");
