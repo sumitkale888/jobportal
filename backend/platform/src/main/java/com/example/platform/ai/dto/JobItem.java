@@ -8,4 +8,5 @@ import lombok.Data;
 public class JobItem {
     private Long id;
     private String text;
+    private String skills;
 }

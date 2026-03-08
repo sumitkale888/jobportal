@@ -24,13 +24,13 @@ async def extract_resume_text(file: UploadFile = File(...)):
         return {"filename": file.filename, "text": text.strip()}
     except Exception as e:
         return {"error": str(e)}
-
 # -----------------------------------------
 # 2. AI MATCHING ENGINE
 # -----------------------------------------
 class JobItem(BaseModel):
     id: int
-    text: str # This will be Job Title + Description + Skills combined
+    text: str
+    skills: str  # 🚨 Added skills field to analyze specifically
 
 class MatchRequest(BaseModel):
     resume_text: str
@@ -42,33 +42,45 @@ def match_jobs(data: MatchRequest):
         if not data.jobs or not data.resume_text.strip():
             return []
 
-        # 1. Prepare the data pool (Resume + All Jobs)
+        resume_lower = data.resume_text.lower()
         job_texts = [job.text for job in data.jobs]
         corpus = [data.resume_text] + job_texts
 
-        # 2. Vectorize (Convert words into numbers/dimensions)
         vectorizer = TfidfVectorizer(stop_words='english')
         tfidf_matrix = vectorizer.fit_transform(corpus)
 
-        # 3. Calculate Cosine Similarity
-        resume_vector = tfidf_matrix[0:1] # The first item is the resume
-        job_vectors = tfidf_matrix[1:]    # The rest are jobs
+        resume_vector = tfidf_matrix[0:1] 
+        job_vectors = tfidf_matrix[1:]    
         
         similarities = cosine_similarity(resume_vector, job_vectors).flatten()
 
-        # 4. Format and filter results
         results = []
         for i, score in enumerate(similarities):
+            job = data.jobs[i]
             match_percent = round(score * 100, 2)
             
-            # Show all matches for now to debug
-            if match_percent >= 5.0:
+            # 🚨 NEW: Extract specific skill matches to explain the score
+            matched_skills = []
+            missing_skills = []
+            
+            if job.skills:
+                # Split skills by comma or space and clean them
+                job_skills_list = [s.strip().lower() for s in job.skills.replace(',', ' ').split() if s.strip()]
+                for skill in job_skills_list:
+                    if skill in resume_lower:
+                        matched_skills.append(skill.capitalize())
+                    else:
+                        missing_skills.append(skill.capitalize())
+
+            # For testing, we show all scores >= 0.0
+            if match_percent >= 0.0:
                 results.append({
-                    "job_id": data.jobs[i].id,
-                    "match_score": match_percent
+                    "job_id": job.id,
+                    "match_score": match_percent,
+                    "matched_skills": list(set(matched_skills)), # Remove duplicates
+                    "missing_skills": list(set(missing_skills))
                 })
 
-        # Sort by highest match first
         results.sort(key=lambda x: x["match_score"], reverse=True)
         return results
 

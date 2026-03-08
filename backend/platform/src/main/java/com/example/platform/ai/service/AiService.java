@@ -83,10 +83,18 @@ public class AiService {
         List<JobItem> jobItems = allJobs.stream()
             .map(job -> {
                 String combinedText = job.getTitle() + " " + job.getDescription();
-                if (job.getRequiredSkills() != null) {
-                    combinedText += " " + job.getRequiredSkills();
+                
+                // Safely convert skills to a plain string, whether your DB stores it as a String or a List
+                String skillsString = job.getRequiredSkills() != null 
+                    ? job.getRequiredSkills().toString().replace("[", "").replace("]", "") 
+                    : "";
+                
+                if (!skillsString.isEmpty()) {
+                    combinedText += " " + skillsString;
                 }
-                return new JobItem(job.getId(), combinedText);
+                
+                // 🚨 NEW: Passing the 3rd argument (skillsString) to Python for Insights
+                return new JobItem(job.getId(), combinedText, skillsString);
             })
             .collect(Collectors.toList());
 
