@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class StudentProfileDto {
+    private Long id;
     private String name;
     private String email;
     

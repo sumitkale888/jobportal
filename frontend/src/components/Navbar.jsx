@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Bell, LogOut, Briefcase } from 'lucide-react';
+import { Bell, LogOut, Briefcase, Sparkles } from 'lucide-react';
 import { getMyNotifications } from '../api/notificationApi'; 
 
 const Navbar = () => {
@@ -13,7 +13,6 @@ const Navbar = () => {
     const fetchUnreadCount = async () => {
         try {
             const data = await getMyNotifications();
-            // Assuming your backend returns a list, count unread items
             const unread = data.filter(n => !n.read).length; 
             setUnreadCount(unread);
         } catch (error) {
@@ -24,7 +23,6 @@ const Navbar = () => {
     useEffect(() => {
         if (user) {
             fetchUnreadCount();
-            // Poll every 30s to keep count updated
             const interval = setInterval(fetchUnreadCount, 30000); 
             return () => clearInterval(interval);
         }
@@ -44,26 +42,24 @@ const Navbar = () => {
                 <div className="flex items-center space-x-6">
                     {user ? (
                         <>
-                            {/* Links based on Role */}
                             {user.role === 'STUDENT' ? (
                                 <>
                                     <Link to="/student/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Jobs</Link>
-                                    <Link to="/student/matches" className="text-gray-600 hover:text-blue-600 font-medium text-yellow-600">AI Matches</Link>
+                                    {/* ✅ RESTORED AI MATCHES TAB */}
+                                    <Link to="/student/matches" className="text-purple-600 hover:text-purple-800 font-bold flex items-center">
+                                        <Sparkles className="w-4 h-4 mr-1" /> AI Matches
+                                    </Link>
                                     <Link to="/student/applications" className="text-gray-600 hover:text-blue-600 font-medium">My Applications</Link>
                                     <Link to="/student/profile" className="text-gray-600 hover:text-blue-600 font-medium">Profile</Link>
                                 </>
                             ) : (
                                 <>
                                     <Link to="/recruiter/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Dashboard</Link>
-                                    
-                                    {/* ✅ ADDED: Company Profile Link */}
                                     <Link to="/recruiter/profile" className="text-gray-600 hover:text-blue-600 font-medium">Company Profile</Link>
-                                    
                                     <Link to="/recruiter/post-job" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-bold">Post Job</Link>
                                 </>
                             )}
 
-                            {/* ✅ NOTIFICATION BELL (LINK TO PAGE) */}
                             <Link to="/notifications" className="relative p-2 text-gray-600 hover:text-blue-600 transition">
                                 <Bell className="w-6 h-6" />
                                 {unreadCount > 0 && (

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { getAllJobs, searchJobs } from '../api/studentApi';
+import { getAllJobs, searchJobs } from '../api/studentApi'; 
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
-import { Briefcase, MapPin, Search, Filter, X, DollarSign, Clock, Building2, ChevronRight ,RotateCcw,  ChevronDown} from 'lucide-react';
+import { Briefcase, MapPin, Search, Filter, X, Clock, ChevronRight } from 'lucide-react';
 
 const StudentDashboard = () => {
     const [jobs, setJobs] = useState([]);
@@ -117,7 +117,6 @@ const StudentDashboard = () => {
                             <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showFilters ? 'max-h-96 opacity-100 mt-4 pt-4 border-t border-slate-100' : 'max-h-0 opacity-0'}`}>
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-2 pb-2">
                                     
-                                    {/* Location Input */}
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Location</label>
                                         <div className="relative">
@@ -131,7 +130,6 @@ const StudentDashboard = () => {
                                         </div>
                                     </div>
 
-                                    {/* Skills Input */}
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Skill</label>
                                         <div className="relative">
@@ -145,7 +143,6 @@ const StudentDashboard = () => {
                                         </div>
                                     </div>
 
-                                    {/* Type Select */}
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Type</label>
                                         <div className="relative">
@@ -168,7 +165,6 @@ const StudentDashboard = () => {
                                         </div>
                                     </div>
 
-                                    {/* Clear Action */}
                                     <div className="flex items-end">
                                         <button 
                                             type="button" 
@@ -184,8 +180,10 @@ const StudentDashboard = () => {
                     </div>
                 </div>
 
-               {/* ✅ JOB LISTINGS */}
                 <div className="max-w-6xl mx-auto">
+                    {/* ✅ ALL JOB LISTINGS */}
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6">All Available Jobs</h2>
+                    
                     {loading ? (
                         <div className="text-center py-20 text-gray-500">Searching...</div>
                     ) : (
@@ -195,7 +193,7 @@ const StudentDashboard = () => {
                                     <div>
                                         <div className="flex justify-between items-start mb-3">
                                             
-                                            {/* ✅ LOGO LOGIC */}
+                                            {/* LOGO LOGIC */}
                                             <div className="flex items-center gap-3">
                                                 {job.companyLogo ? (
                                                     <img 
@@ -229,7 +227,7 @@ const StudentDashboard = () => {
                                         </div>
 
                                         <div className="flex flex-wrap gap-2 mb-6">
-                                            {job.requiredSkills.slice(0, 3).map((skill, index) => (
+                                            {job.requiredSkills && job.requiredSkills.slice(0, 3).map((skill, index) => (
                                                 <span key={index} className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded font-medium">
                                                     {skill}
                                                 </span>

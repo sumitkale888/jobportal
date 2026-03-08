@@ -30,3 +30,7 @@ export const getAllJobs = async () => {
     const response = await axiosInstance.get('/jobs');
     return response.data;
 };
+export const getAiRecommendedJobs = async (studentId) => {
+    const response = await axiosInstance.get(`/ai/match-jobs/${studentId}`);
+    return response.data;
+};

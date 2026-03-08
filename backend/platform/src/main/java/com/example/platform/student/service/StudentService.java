@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StudentService {
 
-    private final StudentProfileRepository profileRepository; // Variable name used throughout
+    private final StudentProfileRepository profileRepository;
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
 
@@ -36,7 +36,6 @@ public class StudentService {
         return mapToDto(profile);
     }
 
-    // ✅ FIXED: Handles multipart file directly
     @Transactional
     public StudentProfile createOrUpdateProfile(String email, String university, String degree, Double cgpa, String skills, String experience, MultipartFile resumeFile) throws Exception {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
@@ -49,7 +48,6 @@ public class StudentService {
         profile.setSkills(skills);
         profile.setExperience(experience);
 
-        // Handle File Upload securely
         if (resumeFile != null && !resumeFile.isEmpty()) {
             profile.setResumeData(resumeFile.getBytes());
             profile.setResumeContentType(resumeFile.getContentType());
@@ -59,7 +57,6 @@ public class StudentService {
         return profileRepository.save(profile);
     }
 
-    // ✅ GET RESUME METHOD
     @Transactional(readOnly = true)
     public StudentProfile getResumeByStudentId(Long studentId) {
         return profileRepository.findById(studentId)
@@ -115,6 +112,7 @@ public class StudentService {
 
     private StudentProfileDto mapToDto(StudentProfile profile) {
         return StudentProfileDto.builder()
+                .id(profile.getId())
                 .name(profile.getUser().getName())
                 .email(profile.getUser().getEmail())
                 .university(profile.getUniversity())
@@ -123,7 +121,6 @@ public class StudentService {
                 .cgpa(profile.getCgpa())
                 .skills(profile.getSkills())
                 .experience(profile.getExperience())
-                // Pass filename instead of URL so frontend knows a file exists
                 .resumeUrl(profile.getResumeFileName()) 
                 .resumeFileName(profile.getResumeFileName())
                 .build();
