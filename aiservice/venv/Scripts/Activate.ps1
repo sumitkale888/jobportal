@@ -13,7 +13,7 @@ Path to the directory that contains the virtual environment to activate. The
 default value for this is the parent of the directory that the Activate.ps1
 script is located within.
 
-.Parameter Prompt
+.Parameter Promptv
 The prompt prefix to display when this virtual environment is activated. By
 default, this prompt is the name of the virtual environment folder (VenvDir)
 surrounded by parentheses and followed by a single space (ie. '(.venv) ').
