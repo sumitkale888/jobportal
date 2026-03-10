@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,8 @@ public class AdminController {
     private final UserRepository userRepository;
     private final JobRepository jobRepository;
     private final RecruiterProfileRepository recruiterProfileRepository;
+    // Add this line with your other repositories at the top of AdminController
+private final com.example.platform.notification.service.NotificationService notificationService;
 
     // 1. Existing Dashboard Stats API
     @PreAuthorize("hasAuthority('ADMIN') or hasRole('ADMIN')") 
@@ -71,6 +74,15 @@ public class AdminController {
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "Recruiter approved successfully!");
+        // 🚨 FIRE THE BACKGROUND NOTIFICATION / EMAIL 🚨
+    String recruiterEmail = profile.getUser().getEmail(); // Or profile.getUserEmail() depending on your model
+    String subject = "🎉 Your JobPortal Account is Approved!";
+    String message = "Hello " + profile.getCompanyName() + ",\n\n" +
+                  "Great news! Our admin team has verified your company profile. " +
+                  "You can now log in and start posting jobs on the platform.\n\n" +
+                  "Welcome aboard!";
+                  
+    notificationService.sendNotification(recruiterEmail, subject, message);
         return ResponseEntity.ok(response);
     }
 

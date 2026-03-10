@@ -19,7 +19,8 @@ public class RecruiterService {
 
     private final RecruiterProfileRepository profileRepository;
     private final UserRepository userRepository;
-    private final JobRepository jobRepository; // Need this for stats
+    private final JobRepository jobRepository; 
+    private final com.example.platform.notification.service.NotificationService notificationService;
 
     // 1. Create/Update Profile
     public RecruiterProfile updateProfile(RecruiterProfile request, MultipartFile logoFile, String email) throws IOException {
@@ -39,7 +40,25 @@ public class RecruiterService {
             profile.setLogoContentType(logoFile.getContentType());
         }
 
-        return profileRepository.save(profile);
+        // Save the profile to the database first
+        RecruiterProfile savedProfile = profileRepository.save(profile);
+
+        // 🚨 ALERT THE ADMIN IF PROFILE IS PENDING APPROVAL 🚨
+        // We only spam the admin if the recruiter is NOT verified yet
+    if (savedProfile.getIsVerified() == null || !savedProfile.getIsVerified()) {
+            String adminEmail = "ranjithdeshpande414@gmail.com"; // Your master admin email
+            String adminSubject = "⚠️ Action Required: Pending Recruiter Approval";
+            String adminMessage = "Hello Admin,\n\n" +
+                  "A company profile has just been submitted and is waiting for your approval.\n\n" +
+                  "Company Name: " + savedProfile.getCompanyName() + "\n" +
+                  "Recruiter Email: " + email + "\n\n" +
+                  "Please log in to your Admin Dashboard to Review, Approve, or Reject this account.";
+                  
+            // Fire the notification!
+            notificationService.sendNotification(adminEmail, adminSubject, adminMessage);
+        }
+
+        return savedProfile;
     }
 
     // 2. Get Profile
@@ -55,10 +74,7 @@ public class RecruiterService {
                 .orElse(null);
 
         // Fetch stats from Job Repository
-      
         long totalJobs = jobRepository.countByPostedByEmail(email); 
-        
-        
         
         return RecruiterDashboardDto.builder()
                 .companyName(profile != null ? profile.getCompanyName() : "Not Set")
