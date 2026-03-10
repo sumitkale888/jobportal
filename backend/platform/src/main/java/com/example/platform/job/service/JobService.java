@@ -26,10 +26,20 @@ public class JobService {
     private final UserRepository userRepository;
     private final RecruiterProfileRepository recruiterProfileRepository;
 
-    @Transactional
+@Transactional
     public JobResponse postJob(JobRequest request, String email) {
         User recruiter = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 🚨 ADDED: VERIFICATION CHECK 🚨
+        // Fetch the recruiter's profile using their email
+        RecruiterProfile profile = recruiterProfileRepository.findByUserEmail(email)
+                .orElseThrow(() -> new RuntimeException("Please complete your Company Profile before posting jobs."));
+
+      if (profile.getIsVerified() == null || !profile.getIsVerified()) {
+            throw new RuntimeException("Your account is pending Admin verification. You cannot post jobs yet.");
+        }
+        // 🚨 END VERIFICATION CHECK 🚨
 
         Job job = Job.builder()
                 .title(request.getTitle())

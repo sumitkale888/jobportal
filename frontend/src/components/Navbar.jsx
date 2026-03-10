@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Bell, LogOut, Briefcase, Sparkles } from 'lucide-react';
+import { Bell, LogOut, Briefcase, Sparkles, ShieldCheck } from 'lucide-react'; // 🚨 Added ShieldCheck icon
 import { getMyNotifications } from '../api/notificationApi'; 
 
 const Navbar = () => {
@@ -42,17 +42,29 @@ const Navbar = () => {
                 <div className="flex items-center space-x-6">
                     {user ? (
                         <>
-                            {user.role === 'STUDENT' ? (
+                            {/* 👑 ADMIN LINKS */}
+                            {user.role === 'ADMIN' && (
+                                <>
+                                    <Link to="/admin/dashboard" className="text-blue-600 hover:text-blue-800 font-bold flex items-center">
+                                        <ShieldCheck className="w-4 h-4 mr-1" /> Admin Dashboard
+                                    </Link>
+                                </>
+                            )}
+
+                            {/* 🎓 STUDENT LINKS */}
+                            {user.role === 'STUDENT' && (
                                 <>
                                     <Link to="/student/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Jobs</Link>
-                                    {/* ✅ RESTORED AI MATCHES TAB */}
                                     <Link to="/student/matches" className="text-purple-600 hover:text-purple-800 font-bold flex items-center">
                                         <Sparkles className="w-4 h-4 mr-1" /> AI Matches
                                     </Link>
                                     <Link to="/student/applications" className="text-gray-600 hover:text-blue-600 font-medium">My Applications</Link>
                                     <Link to="/student/profile" className="text-gray-600 hover:text-blue-600 font-medium">Profile</Link>
                                 </>
-                            ) : (
+                            )}
+
+                            {/* 🏢 RECRUITER LINKS */}
+                            {user.role === 'RECRUITER' && (
                                 <>
                                     <Link to="/recruiter/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Dashboard</Link>
                                     <Link to="/recruiter/profile" className="text-gray-600 hover:text-blue-600 font-medium">Company Profile</Link>
@@ -60,6 +72,7 @@ const Navbar = () => {
                                 </>
                             )}
 
+                            {/* COMMON LOGGED-IN ELEMENTS */}
                             <Link to="/notifications" className="relative p-2 text-gray-600 hover:text-blue-600 transition">
                                 <Bell className="w-6 h-6" />
                                 {unreadCount > 0 && (

@@ -41,4 +41,11 @@ public class RecruiterProfile {
     
     private String logoContentType; // e.g., image/png
     private boolean isVerified = false;
+    public Boolean getIsVerified() {
+        return this.isVerified;
+    }
+
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
+    }
 }

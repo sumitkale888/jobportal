@@ -17,8 +17,7 @@ import PostJob from "./recruiter/PostJob";
 import RecruiterProfile from "./recruiter/RecruiterProfile";
 import JobApplicants from "./recruiter/JobApplicants";
 import Notifications from "./pages/Notifications";
-
-const AdminDashboard = () => <div>Admin Dashboard (Coming Soon)</div>;
+import AdminDashboard from './admin/AdminDashboard';
 
 function App() {
   return (
@@ -31,7 +30,6 @@ function App() {
           <Route path="/register" element={<Register />} />
 
           {/* STUDENT ROUTES */}
-          {/* ✅ FIX 1: Add 'ROLE_STUDENT' to allowedRoles for safety */}
           <Route element={<ProtectedRoute allowedRoles={['STUDENT', 'RECRUITER', 'ROLE_STUDENT', 'ROLE_RECRUITER']} />}>
              <Route path="/notifications" element={<Notifications />} />
           </Route>
@@ -40,8 +38,6 @@ function App() {
             <Route path="/student/profile" element={<Profile />} />
             <Route path="/student/jobs/:id" element={<JobDetails />} />
             <Route path="/student/applications" element={<Applications />} />
-            
-            {/* ✅ FIX 2: Change path from '/student/match' to '/student/matches' */}
             <Route path="/student/matches" element={<MatchedJobs />} /> 
           </Route>
 
@@ -55,7 +51,7 @@ function App() {
 
           {/* ADMIN ROUTES */}
           <Route element={<ProtectedRoute allowedRoles={["ADMIN", "ROLE_ADMIN"]} />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
 
           {/* Catch-all Redirect */}
