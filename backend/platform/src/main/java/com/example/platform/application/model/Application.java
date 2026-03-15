@@ -38,6 +38,10 @@ public class Application {
     @Column(nullable = false)
     private ApplicationStatus status;
 
+    private LocalDateTime interviewDateTime;
+    private String interviewLocation;
+    private String interviewLink;
+
     @CreationTimestamp
     private LocalDateTime appliedAt;
 }

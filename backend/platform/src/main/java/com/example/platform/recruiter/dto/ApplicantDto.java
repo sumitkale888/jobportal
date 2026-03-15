@@ -18,6 +18,9 @@ public class ApplicantDto {
     private String skills;
     private String experience;
     private String resumeUrl; // Google Drive Link
-    private ApplicationStatus status; // APPLIED, SHORTLISTED, REJECTED
+    private ApplicationStatus status; // APPLIED, SHORTLISTED, REJECTED, INTERVIEW_SCHEDULED
+    private LocalDateTime interviewDateTime;
+    private String interviewLocation;
+    private String interviewLink;
     private LocalDateTime appliedAt;
 }

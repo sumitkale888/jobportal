@@ -16,6 +16,7 @@ import RecruiterDashboard from "./recruiter/RecruiterDashboard";
 import PostJob from "./recruiter/PostJob";
 import RecruiterProfile from "./recruiter/RecruiterProfile";
 import JobApplicants from "./recruiter/JobApplicants";
+import Chat from "./components/Chat";
 import Notifications from "./pages/Notifications";
 import AdminDashboard from './admin/AdminDashboard';
 
@@ -38,7 +39,7 @@ function App() {
             <Route path="/student/profile" element={<Profile />} />
             <Route path="/student/jobs/:id" element={<JobDetails />} />
             <Route path="/student/applications" element={<Applications />} />
-            <Route path="/student/matches" element={<MatchedJobs />} /> 
+            <Route path="/student/matches" element={<MatchedJobs />} />
           </Route>
 
           {/* RECRUITER ROUTES */}
@@ -47,6 +48,11 @@ function App() {
             <Route path="/recruiter/profile" element={<RecruiterProfile />} />
             <Route path="/recruiter/post-job" element={<PostJob />} />
             <Route path="/recruiter/jobs/:jobId/applicants" element={<JobApplicants />} />
+          </Route>
+
+          {/* CHAT ROUTE (Student & Recruiter) */}
+          <Route element={<ProtectedRoute allowedRoles={["STUDENT", "ROLE_STUDENT", "RECRUITER", "ROLE_RECRUITER"]} />}>
+            <Route path="/chat" element={<Chat />} />
           </Route>
 
           {/* ADMIN ROUTES */}

@@ -48,6 +48,30 @@ export const updateApplicationStatus = async (applicationId, status) => {
     return response.data;
 };
 
+export const scheduleInterview = async (applicationId, interviewDateTime, location, link) => {
+    const response = await axiosInstance.post(`/recruiter/applications/${applicationId}/schedule-interview`, {
+        interviewDateTime,
+        interviewLocation: location,
+        interviewLink: link
+    });
+    return response.data;
+};
+
+export const sendChatMessage = async (recipientEmail, content, applicationId) => {
+    const response = await axiosInstance.post('/chat/send', { recipientEmail, content, applicationId });
+    return response.data;
+};
+
+export const getConversation = async (contactEmail) => {
+    const response = await axiosInstance.get(`/chat/conversation?contactEmail=${encodeURIComponent(contactEmail)}`);
+    return response.data;
+};
+
+export const getMyMessages = async () => {
+    const response = await axiosInstance.get('/chat/my-messages');
+    return response.data;
+};
+
 // ✅ ADD THIS FUNCTION
 // ✅ CORRECTED FUNCTION
 export const downloadResume = async (studentId) => {

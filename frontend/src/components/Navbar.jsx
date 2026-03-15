@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Bell, LogOut, Briefcase, Sparkles, ShieldCheck } from 'lucide-react'; // 🚨 Added ShieldCheck icon
+import { Bell, LogOut, Briefcase, Sparkles, ShieldCheck, MessageSquare } from 'lucide-react'; // 🚨 Added ShieldCheck icon
 import { getMyNotifications } from '../api/notificationApi'; 
 
 const Navbar = () => {
@@ -33,6 +33,11 @@ const Navbar = () => {
         navigate('/login');
     };
 
+    const normalizedRole = user?.role?.replace(/^ROLE_/, '');
+    const isStudent = normalizedRole === 'STUDENT';
+    const isRecruiter = normalizedRole === 'RECRUITER';
+    const isAdmin = normalizedRole === 'ADMIN';
+
     return (
         <nav className="bg-white shadow-md p-4 sticky top-0 z-50">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -43,7 +48,7 @@ const Navbar = () => {
                     {user ? (
                         <>
                             {/* 👑 ADMIN LINKS */}
-                            {user.role === 'ADMIN' && (
+                            {isAdmin && (
                                 <>
                                     <Link to="/admin/dashboard" className="text-blue-600 hover:text-blue-800 font-bold flex items-center">
                                         <ShieldCheck className="w-4 h-4 mr-1" /> Admin Dashboard
@@ -52,22 +57,24 @@ const Navbar = () => {
                             )}
 
                             {/* 🎓 STUDENT LINKS */}
-                            {user.role === 'STUDENT' && (
+                            {isStudent && (
                                 <>
                                     <Link to="/student/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Jobs</Link>
                                     <Link to="/student/matches" className="text-purple-600 hover:text-purple-800 font-bold flex items-center">
                                         <Sparkles className="w-4 h-4 mr-1" /> AI Matches
                                     </Link>
                                     <Link to="/student/applications" className="text-gray-600 hover:text-blue-600 font-medium">My Applications</Link>
+                                    <Link to="/chat" className="text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1"><MessageSquare className="w-4 h-4"/> Chat</Link>
                                     <Link to="/student/profile" className="text-gray-600 hover:text-blue-600 font-medium">Profile</Link>
                                 </>
                             )}
 
                             {/* 🏢 RECRUITER LINKS */}
-                            {user.role === 'RECRUITER' && (
+                            {isRecruiter && (
                                 <>
                                     <Link to="/recruiter/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Dashboard</Link>
                                     <Link to="/recruiter/profile" className="text-gray-600 hover:text-blue-600 font-medium">Company Profile</Link>
+                                    <Link to="/chat" className="text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1"><MessageSquare className="w-4 h-4"/> Chat</Link>
                                     <Link to="/recruiter/post-job" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-bold">Post Job</Link>
                                 </>
                             )}

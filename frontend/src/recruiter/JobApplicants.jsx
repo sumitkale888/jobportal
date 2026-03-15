@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getJobApplicants, updateApplicationStatus, downloadResume } from '../api/recruiterApi'; // ✅ Added downloadResume
+import { getJobApplicants, updateApplicationStatus, scheduleInterview, sendChatMessage, getConversation, downloadResume } from '../api/recruiterApi'; // ✅ Added scheduleInterview
 import Navbar from '../components/Navbar';
 import { toast } from 'react-toastify';
-import { FileText, Check, X, User, ExternalLink } from 'lucide-react';
+import { FileText, Check, X, User, ExternalLink, MessageSquare, Calendar, Send } from 'lucide-react';
 
 const JobApplicants = () => {
     const { jobId } = useParams();
     const [applicants, setApplicants] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [interviewDraft, setInterviewDraft] = useState({});
+    const [chatDraft, setChatDraft] = useState({});
 
     useEffect(() => {
         loadApplicants();
@@ -35,9 +37,41 @@ const JobApplicants = () => {
         }
     };
 
+    const handleSchedule = async (applicationId) => {
+        const draft = interviewDraft[applicationId];
+        if (!draft?.interviewDateTime || !draft?.interviewLocation) {
+            toast.error('Please choose date/time and location');
+            return;
+        }
+        try {
+            await scheduleInterview(applicationId, draft.interviewDateTime, draft.interviewLocation, draft.interviewLink || '');
+            toast.success('Interview scheduled and student notified');
+            setInterviewDraft((prev) => ({ ...prev, [applicationId]: {} }));
+            loadApplicants();
+        } catch (error) {
+            toast.error('Failed to schedule interview');
+        }
+    };
+
+    const handleSendMessage = async (applicationId, studentEmail) => {
+        const content = (chatDraft[applicationId] || '').trim();
+        if (!content) {
+            toast.error('Message cannot be empty');
+            return;
+        }
+        try {
+            await sendChatMessage(studentEmail, content, applicationId);
+            toast.success('Message sent');
+            setChatDraft((prev) => ({ ...prev, [applicationId]: '' }));
+        } catch (error) {
+            toast.error('Failed to send message');
+        }
+    };
+
     const getStatusBadge = (status) => {
         switch (status) {
             case 'SHORTLISTED': return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold">Shortlisted</span>;
+            case 'INTERVIEW_SCHEDULED': return <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-bold">Interview Scheduled</span>;
             case 'REJECTED': return <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-bold">Rejected</span>;
             default: return <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-bold">Applied</span>;
         }
@@ -85,11 +119,10 @@ const JobApplicants = () => {
                                         </div>
 
                                         {/* Status & Actions */}
-                                        <div className="flex flex-col items-end gap-3">
+                                        <div className="flex flex-col items-end gap-3 w-full">
                                             <div className="mb-2">
                                                 {getStatusBadge(app.status)}
                                             </div>
-                                            
                                             {app.status === 'APPLIED' && (
                                                 <div className="flex gap-2">
                                                     <button onClick={() => handleStatusChange(app.applicationId, 'SHORTLISTED')}
@@ -100,6 +133,28 @@ const JobApplicants = () => {
                                                         className="flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm">
                                                         <X className="w-4 h-4 mr-1"/> Reject
                                                     </button>
+                                                </div>
+                                            )}
+
+                                            {app.status === 'SHORTLISTED' && (
+                                                <div className="bg-gray-50 border border-gray-200 rounded p-3 w-full">
+                                                    <div className="text-sm font-semibold mb-2 text-slate-700">Schedule Interview</div>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                                        <input type="datetime-local" value={interviewDraft[app.applicationId]?.interviewDateTime || ''} onChange={(e) => setInterviewDraft(prev => ({ ...prev, [app.applicationId]: { ...prev[app.applicationId], interviewDateTime: e.target.value } }))} className="border rounded px-2 py-1 w-full text-sm" />
+                                                        <input type="text" placeholder="Location (Online/Office)" value={interviewDraft[app.applicationId]?.interviewLocation || ''} onChange={(e) => setInterviewDraft(prev => ({ ...prev, [app.applicationId]: { ...prev[app.applicationId], interviewLocation: e.target.value } }))} className="border rounded px-2 py-1 w-full text-sm" />
+                                                    </div>
+                                                    <input type="text" placeholder="Meeting link (optional)" value={interviewDraft[app.applicationId]?.interviewLink || ''} onChange={(e) => setInterviewDraft(prev => ({ ...prev, [app.applicationId]: { ...prev[app.applicationId], interviewLink: e.target.value } }))} className="mt-2 border rounded px-2 py-1 w-full text-sm" />
+                                                    <button onClick={() => handleSchedule(app.applicationId)} className="mt-2 inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-semibold"><Calendar className="w-4 h-4 mr-1" /> Schedule Interview</button>
+                                                </div>
+                                            )}
+
+                                            {app.status !== 'APPLIED' && (
+                                                <div className="mt-2 w-full">
+                                                    <div className="text-sm font-semibold mb-1 flex items-center gap-1 text-slate-700"><MessageSquare className="w-4 h-4"/> Message Student</div>
+                                                    <div className="flex gap-2">
+                                                        <input type="text" placeholder="Write message..." value={chatDraft[app.applicationId] || ''} onChange={(e) => setChatDraft(prev => ({ ...prev, [app.applicationId]: e.target.value }))} className="border rounded px-2 py-1 w-full text-sm" />
+                                                        <button onClick={() => handleSendMessage(app.applicationId, app.email)} className="inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"><Send className="w-4 h-4"/></button>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

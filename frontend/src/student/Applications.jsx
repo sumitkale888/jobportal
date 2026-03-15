@@ -72,12 +72,14 @@ const Applications = () => {
                                         </div>
                                     </div>
                                     
-                                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-2 w-full md:w-auto justify-between md:justify-end">
                                         <span className={`px-4 py-1.5 rounded-full text-xs font-bold border ${getStatusColor(app.status)}`}>
                                             {app.status}
                                         </span>
+                                        {app.status === 'INTERVIEW_SCHEDULED' && app.interviewDateTime && (
+                                            <span className="px-2 py-1 text-xs rounded bg-indigo-100 text-indigo-700">Interview: {new Date(app.interviewDateTime).toLocaleString()}</span>
+                                        )}
 
-                                        {/* ✅ FIX: Allow delete for APPLIED OR REJECTED */}
                                         {(app.status === 'APPLIED' || app.status === 'REJECTED') && (
                                             <button 
                                                 onClick={() => handleWithdraw(app.applicationId)}

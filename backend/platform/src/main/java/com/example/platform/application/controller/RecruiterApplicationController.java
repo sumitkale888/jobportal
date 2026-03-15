@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -34,5 +35,25 @@ public class RecruiterApplicationController {
             Principal principal
     ) {
         return ResponseEntity.ok(applicationService.updateApplicationStatus(applicationId, status, principal.getName()));
+    }
+
+    @PostMapping("/{applicationId}/schedule-interview")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<String> scheduleInterview(
+            @PathVariable Long applicationId,
+            @RequestBody ScheduleInterviewRequest request,
+            Principal principal
+    ) {
+        return ResponseEntity.ok(applicationService.scheduleInterview(applicationId, principal.getName(), request.getInterviewDateTime(), request.getInterviewLocation(), request.getInterviewLink()));
+    }
+
+    private static class ScheduleInterviewRequest {
+        private LocalDateTime interviewDateTime;
+        private String interviewLocation;
+        private String interviewLink;
+
+        public LocalDateTime getInterviewDateTime() { return interviewDateTime; }
+        public String getInterviewLocation() { return interviewLocation; }
+        public String getInterviewLink() { return interviewLink; }
     }
 }

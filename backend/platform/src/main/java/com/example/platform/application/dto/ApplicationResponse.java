@@ -15,5 +15,8 @@ public class ApplicationResponse {
     private String applicantName;
     private String applicantEmail;
     private ApplicationStatus status;
+    private LocalDateTime interviewDateTime;
+    private String interviewLocation;
+    private String interviewLink;
     private LocalDateTime appliedAt;
 }

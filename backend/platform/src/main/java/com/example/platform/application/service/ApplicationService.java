@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -117,12 +118,56 @@ public class ApplicationService {
                 // ✅ Passes filename. If null, frontend won't show the "View PDF" button
                 .resumeUrl(app.getStudent().getResumeFileName()) 
                 .status(app.getStatus())
+                .interviewDateTime(app.getInterviewDateTime())
+                .interviewLocation(app.getInterviewLocation())
+                .interviewLink(app.getInterviewLink())
                 .appliedAt(app.getAppliedAt())
                 .build()).collect(Collectors.toList());
     }
 
+    @Transactional
+    public String scheduleInterview(Long applicationId, String recruiterEmail, LocalDateTime interviewDateTime, String interviewLocation, String interviewLink) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new RuntimeException("Application not found"));
+
+        if (!application.getJob().getPostedBy().getEmail().equals(recruiterEmail)) {
+            throw new RuntimeException("Unauthorized: You cannot schedule this interview.");
+        }
+
+        application.setStatus(ApplicationStatus.INTERVIEW_SCHEDULED);
+        application.setInterviewDateTime(interviewDateTime);
+        application.setInterviewLocation(interviewLocation);
+        application.setInterviewLink(interviewLink);
+        applicationRepository.save(application);
+
+        String studentEmail = application.getStudent().getUser().getEmail();
+        String jobTitle = application.getJob().getTitle();
+        String subject = "Interview Scheduled: " + jobTitle;
+        String message = "Hi " + application.getStudent().getUser().getName() + ",\n\n" +
+                "Your interview for " + jobTitle + " has been scheduled.\n" +
+                "Date & Time: " + interviewDateTime + "\n" +
+                "Location: " + interviewLocation + "\n" +
+                (interviewLink != null ? "Link: " + interviewLink + "\n" : "") +
+                "\nPlease join on time.\n\nBest regards,\n" + application.getJob().getPostedBy().getName();
+
+        notificationService.sendNotification(studentEmail, subject, message);
+        return "Interview scheduled and student notified.";
+    }
+
     private ApplicationResponse mapToResponse(Application app) {
-        return ApplicationResponse.builder().applicationId(app.getId()).jobId(app.getJob().getId()).jobTitle(app.getJob().getTitle()).companyName(app.getJob().getCompanyName()).applicantName(app.getStudent().getUser().getName()).applicantEmail(app.getStudent().getUser().getEmail()).status(app.getStatus()).appliedAt(app.getAppliedAt()).build();
+        return ApplicationResponse.builder()
+                .applicationId(app.getId())
+                .jobId(app.getJob().getId())
+                .jobTitle(app.getJob().getTitle())
+                .companyName(app.getJob().getCompanyName())
+                .applicantName(app.getStudent().getUser().getName())
+                .applicantEmail(app.getStudent().getUser().getEmail())
+                .status(app.getStatus())
+                .interviewDateTime(app.getInterviewDateTime())
+                .interviewLocation(app.getInterviewLocation())
+                .interviewLink(app.getInterviewLink())
+                .appliedAt(app.getAppliedAt())
+                .build();
     }
     
     @Transactional
