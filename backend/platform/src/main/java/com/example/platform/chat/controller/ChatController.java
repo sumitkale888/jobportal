@@ -7,6 +7,7 @@ import com.example.platform.chat.service.ChatService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class ChatController {
     private final ChatService chatService;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @PreAuthorize("hasRole('RECRUITER') or hasRole('STUDENT')")
     @PostMapping("/send")
@@ -31,7 +33,21 @@ public class ChatController {
                 .orElseThrow(() -> new RuntimeException("Recipient not found"));
 
         Message message = chatService.sendMessage(sender.getId(), recipient.getId(), request.getContent(), request.getApplicationId());
-        return ResponseEntity.ok(toDto(message));
+        MessageDto dto = toDto(message);
+
+        // broadcast message to both sender and recipient topics
+        messagingTemplate.convertAndSend("/topic/chat/" + recipient.getId(), dto);
+        messagingTemplate.convertAndSend("/topic/chat/" + sender.getId(), dto);
+
+        return ResponseEntity.ok(dto);
+    }
+
+    @PreAuthorize("hasRole('RECRUITER') or hasRole('STUDENT')")
+    @GetMapping("/me")
+    public ResponseEntity<UserInfoDto> getCurrentUser(Principal principal) {
+        User user = userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(new UserInfoDto(user.getId(), user.getEmail()));
     }
 
     @PreAuthorize("hasRole('RECRUITER') or hasRole('STUDENT')")
@@ -89,5 +105,16 @@ public class ChatController {
         private String content;
         private java.time.LocalDateTime sentAt;
         private Long applicationId;
+    }
+
+    @Data
+    private static class UserInfoDto {
+        private Long id;
+        private String email;
+
+        public UserInfoDto(Long id, String email) {
+            this.id = id;
+            this.email = email;
+        }
     }
 }

@@ -38,7 +38,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
           
                 .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll() 
-                
+                .requestMatchers("/ws-chat/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated() 
             )

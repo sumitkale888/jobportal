@@ -9,6 +9,7 @@ const Chat = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [selectedContactId, setSelectedContactId] = useState(null);
+  const selectedContactIdRef = useRef(null);
   const [conversation, setConversation] = useState([]);
   const [draft, setDraft] = useState('');
   const [connected, setConnected] = useState(false);
@@ -37,6 +38,7 @@ const Chat = () => {
       const conv = await getConversation(contactId);
       setConversation(conv || []);
       setSelectedContactId(contactId);
+      selectedContactIdRef.current = contactId;
     } catch {
       toast.error('Could not load conversation.');
     }
@@ -51,9 +53,11 @@ const Chat = () => {
         const built = buildContacts(msgs, user.id);
         setContacts(built);
         if (built.length > 0) {
-          const conv = await getConversation(built[0].id);
+          const firstId = built[0].id;
+          const conv = await getConversation(firstId);
           setConversation(conv || []);
-          setSelectedContactId(built[0].id);
+          setSelectedContactId(firstId);
+          selectedContactIdRef.current = firstId;
         }
       } catch {
         toast.error('Could not load chat data.');
@@ -63,23 +67,31 @@ const Chat = () => {
   }, []);
 
   useEffect(() => {
+    selectedContactIdRef.current = selectedContactId;
+  }, [selectedContactId]);
+
+  useEffect(() => {
     if (!currentUser) return;
 
+    const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:8091/ws-chat';
     const client = new Client({
-      webSocketFactory: () => new SockJS(`${window.location.protocol}//${window.location.host}/ws-chat`),
+      webSocketFactory: () => new SockJS(wsUrl),
       reconnectDelay: 5000,
       debug: () => {},
       onConnect: () => {
+        console.info('STOMP connected for user', currentUser?.id);
         setConnected(true);
         client.subscribe(`/topic/chat/${currentUser.id}`, (frame) => {
+          console.info('STOMP frame received', frame);
           try {
             const message = JSON.parse(frame.body);
             setConversation((prev) => {
-              if (!selectedContactId) return prev;
-              const isForCurrent =
-                (message.senderId === selectedContactId && message.recipientId === currentUser.id) ||
-                (message.senderId === currentUser.id && message.recipientId === selectedContactId);
-              return isForCurrent ? [...prev, message] : prev;
+              const activeId = selectedContactIdRef.current;
+              if (!activeId) return prev;
+              const isForActive =
+                (message.senderId === activeId && message.recipientId === currentUser.id) ||
+                (message.senderId === currentUser.id && message.recipientId === activeId);
+              return isForActive ? [...prev, message] : prev;
             });
 
             setContacts((prev) => {
@@ -112,7 +124,7 @@ const Chat = () => {
         stompClientRef.current.deactivate();
       }
     };
-  }, [currentUser, selectedContactId]);
+  }, [currentUser]);
 
   const handleSend = async (e) => {
     e.preventDefault();
