@@ -1,99 +1,197 @@
-import React, { useEffect, useState } from 'react';
-import { getMyMessages, getConversation, sendChatMessage } from '../api/recruiterApi';
+import React, { useEffect, useState, useRef } from 'react';
+import { getMyMessages, getConversation, sendChatMessage, getChatMe } from '../api/recruiterApi';
 import Navbar from './Navbar';
 import { toast } from 'react-toastify';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
 const Chat = () => {
-  const [messages, setMessages] = useState([]);
-  const [contact, setContact] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [contacts, setContacts] = useState([]);
+  const [selectedContactId, setSelectedContactId] = useState(null);
   const [conversation, setConversation] = useState([]);
   const [draft, setDraft] = useState('');
+  const [connected, setConnected] = useState(false);
+  const stompClientRef = useRef(null);
 
-  const loadMessages = async () => {
-    try {
-      const data = await getMyMessages();
-      setMessages(data);
-    } catch (error) {
-      toast.error('Failed to load messages');
-    }
-  };
-
-  const getContacts = (msgs) => {
+  const buildContacts = (messages, userId) => {
     const map = new Map();
-    msgs.forEach((msg) => {
-      if (msg.senderId && msg.senderEmail) {
-        map.set(msg.senderId, msg.senderEmail);
-      }
-      if (msg.recipientId && msg.recipientEmail) {
-        map.set(msg.recipientId, msg.recipientEmail);
+    messages.forEach((m) => {
+      const otherId = m.senderId === userId ? m.recipientId : m.senderId;
+      const otherEmail = m.senderId === userId ? m.recipientEmail : m.senderEmail;
+      const previous = map.get(otherId);
+      if (!previous || new Date(m.sentAt) > new Date(previous.sentAt)) {
+        map.set(otherId, {
+          id: otherId,
+          email: otherEmail,
+          lastMessage: m.content,
+          sentAt: m.sentAt,
+        });
       }
     });
-    return Array.from(map.entries()).map(([id, email]) => ({ id, email }));
+    return Array.from(map.values()).sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
   };
 
-  const openConversation = async (selectedContact) => {
+  const loadConversation = async (contactId) => {
     try {
-      setContact(selectedContact);
-      const data = await getConversation(selectedContact.id);
-      setConversation(data);
-    } catch (error) {
-      toast.error('Failed to open conversation');
-    }
-  };
-
-  const handleSend = async () => {
-    if (!contact?.id) return toast.error('Select a contact first');
-    if (!draft.trim()) return toast.error('Write a message first');
-    try {
-      await sendChatMessage(contact.id, draft, null);
-      setDraft('');
-      openConversation(contact);
-      loadMessages();
-      toast.success('Message sent');
-    } catch (error) {
-      toast.error('Failed to send');
+      const conv = await getConversation(contactId);
+      setConversation(conv || []);
+      setSelectedContactId(contactId);
+    } catch {
+      toast.error('Could not load conversation.');
     }
   };
 
   useEffect(() => {
-    loadMessages();
+    const run = async () => {
+      try {
+        const user = await getChatMe();
+        setCurrentUser(user);
+        const msgs = await getMyMessages();
+        const built = buildContacts(msgs, user.id);
+        setContacts(built);
+        if (built.length > 0) {
+          const conv = await getConversation(built[0].id);
+          setConversation(conv || []);
+          setSelectedContactId(built[0].id);
+        }
+      } catch {
+        toast.error('Could not load chat data.');
+      }
+    };
+    run();
   }, []);
 
-  const contacts = getContacts(messages);
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS(`${window.location.protocol}//${window.location.host}/ws-chat`),
+      reconnectDelay: 5000,
+      debug: () => {},
+      onConnect: () => {
+        setConnected(true);
+        client.subscribe(`/topic/chat/${currentUser.id}`, (frame) => {
+          try {
+            const message = JSON.parse(frame.body);
+            setConversation((prev) => {
+              if (!selectedContactId) return prev;
+              const isForCurrent =
+                (message.senderId === selectedContactId && message.recipientId === currentUser.id) ||
+                (message.senderId === currentUser.id && message.recipientId === selectedContactId);
+              return isForCurrent ? [...prev, message] : prev;
+            });
+
+            setContacts((prev) => {
+              const otherId = message.senderId === currentUser.id ? message.recipientId : message.senderId;
+              const otherEmail = message.senderId === currentUser.id ? message.recipientEmail : message.senderEmail;
+              const existing = prev.find((c) => c.id === otherId);
+              const next = prev.filter((c) => c.id !== otherId);
+              next.unshift({
+                id: otherId,
+                email: existing?.email || otherEmail || 'Unknown',
+                lastMessage: message.content,
+                sentAt: message.sentAt,
+              });
+              return next;
+            });
+          } catch (e) {
+            console.error('Invalid STOMP payload', e);
+          }
+        });
+      },
+      onDisconnect: () => setConnected(false),
+      onWebSocketError: (err) => console.error('WebSocket error', err),
+    });
+
+    client.activate();
+    stompClientRef.current = client;
+
+    return () => {
+      if (stompClientRef.current) {
+        stompClientRef.current.deactivate();
+      }
+    };
+  }, [currentUser, selectedContactId]);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!draft.trim()) return;
+    if (!selectedContactId) {
+      toast.warning('Select a contact first.');
+      return;
+    }
+
+    try {
+      const sent = await sendChatMessage(selectedContactId, draft.trim(), null);
+      setConversation((prev) => [...prev, sent]);
+      setDraft('');
+      setContacts((prev) => {
+        const existing = prev.find((c) => c.id === selectedContactId);
+        const next = prev.filter((c) => c.id !== selectedContactId);
+        next.unshift({
+          id: selectedContactId,
+          email: existing?.email || 'Unknown',
+          lastMessage: sent.content,
+          sentAt: sent.sentAt,
+        });
+        return next;
+      });
+    } catch {
+      toast.error('Could not send message.');
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className='min-h-screen bg-slate-100'>
       <Navbar />
-      <div className="max-w-6xl mx-auto py-8 px-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg shadow">
-          <h2 className="text-lg font-bold mb-3">Contacts</h2>
-          {contacts.length === 0 && <p className="text-gray-500">No messages yet.</p>}
-          <div className="space-y-2">
+      <div className='max-w-5xl mx-auto p-4'>
+        <div className='mb-2 text-right'>
+          <span className={`px-2 py-1 rounded ${connected ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-800'}`}>
+            {connected ? 'Live connected' : 'Disconnected'}
+          </span>
+        </div>
+        <div className='grid grid-cols-12 gap-4'>
+          <div className='col-span-4 bg-white rounded shadow p-3 h-[600px] overflow-auto'>
+            <h2 className='font-semibold text-lg mb-2'>Contacts</h2>
+            {contacts.length === 0 && <p className='text-gray-500'>No conversations yet.</p>}
             {contacts.map((c) => (
-              <button key={c.id} onClick={() => openConversation(c)} className={`w-full text-left p-2 rounded ${contact?.id === c.id ? 'bg-blue-100' : 'bg-gray-50 hover:bg-gray-100'}`}>
-                {c.email}
+              <button
+                key={c.id}
+                className={`w-full text-left border rounded p-2 mb-2 ${selectedContactId === c.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                onClick={() => loadConversation(c.id)}
+              >
+                <div className='font-medium'>{c.email}</div>
+                <div className='text-xs text-gray-500'>{c.lastMessage}</div>
               </button>
             ))}
           </div>
-        </div>
-        <div className="bg-white p-4 rounded-lg shadow lg:col-span-2">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-lg font-bold">Conversation</h2>
-            {contact && <span className="text-sm text-gray-500">With {contact.email}</span>}
-          </div>
-          <div className="h-96 overflow-y-auto border border-gray-200 rounded p-2 bg-gray-50 mb-3">
-            {conversation.length === 0 && <div className="text-gray-500">Select a contact to view messages.</div>}
-            {conversation.map((m) => (
-              <div key={m.id} className={`p-2 mb-1 rounded ${m.senderId === contact?.id ? 'bg-white text-left' : 'bg-blue-100 text-right'}`}>
-                <div className="text-xs text-gray-500">{m.senderEmail}</div>
-                <div className="text-sm">{m.content}</div>
-                <div className="text-xs text-gray-400">{new Date(m.sentAt).toLocaleString()}</div>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Type your message..." className="w-full rounded border p-2" />
-            <button onClick={handleSend} className="px-4 py-2 bg-blue-600 text-white rounded">Send</button>
+          <div className='col-span-8 bg-white rounded shadow p-3 h-[600px] flex flex-col'>
+            <div className='mb-2'>
+              <h2 className='font-semibold text-lg'>Conversation</h2>
+              {selectedContactId ? <p className='text-sm text-gray-500'>Chat with {contacts.find((c) => c.id === selectedContactId)?.email || selectedContactId}</p> : <p className='text-sm text-gray-500'>Select a contact to chat.</p>}
+            </div>
+            <div className='flex-1 border rounded p-2 overflow-auto bg-slate-50'>
+              {conversation.length === 0 ? (
+                <div className='text-gray-500 p-4'>No messages yet.</div>
+              ) : (
+                conversation.map((m) => {
+                  const isMine = currentUser && m.senderId === currentUser.id;
+                  return (
+                    <div key={`${m.id}-${m.sentAt}`} className={`mb-2 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`rounded px-3 py-2 max-w-[80%] ${isMine ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-900'}`}>
+                        <div>{m.content}</div>
+                        <div className='text-xs text-right mt-1 opacity-70'>{new Date(m.sentAt).toLocaleTimeString()}</div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <form onSubmit={handleSend} className='mt-3 flex gap-2'>
+              <input type='text' placeholder='Type a message...' className='flex-1 border rounded px-3 py-2 focus:outline-none' value={draft} onChange={(e) => setDraft(e.target.value)} />
+              <button className='bg-blue-600 text-white px-4 rounded' type='submit'>Send</button>
+            </form>
           </div>
         </div>
       </div>

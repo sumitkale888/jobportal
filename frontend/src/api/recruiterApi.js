@@ -72,6 +72,11 @@ export const getMyMessages = async () => {
     return response.data;
 };
 
+export const getChatMe = async () => {
+    const response = await axiosInstance.get('/chat/me');
+    return response.data;
+};
+
 // ✅ ADD THIS FUNCTION
 // ✅ CORRECTED FUNCTION
 export const downloadResume = async (studentId) => {
