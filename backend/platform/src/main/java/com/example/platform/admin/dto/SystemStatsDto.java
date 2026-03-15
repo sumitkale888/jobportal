@@ -11,4 +11,5 @@ public class SystemStatsDto {
     private long totalRecruiters;
     private long totalJobs;
     private long totalApplications;
+    private long activeCompanies;
 }

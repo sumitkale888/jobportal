@@ -28,6 +28,12 @@ public class Job {
     private Double salary;
 
     private String jobType;
+    private String category;
+
+    @Enumerated(EnumType.STRING)
+    private com.example.platform.common.enums.JobStatus status = com.example.platform.common.enums.JobStatus.PENDING;
+    private boolean fake = false;
+    private int reportCount = 0;
 
     // ✅ FIX: Add (fetch = FetchType.EAGER)
     // This forces the "skills" to load immediately, preventing the 500 Error.

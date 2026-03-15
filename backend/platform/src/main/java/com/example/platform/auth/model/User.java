@@ -44,6 +44,7 @@ public class User implements UserDetails {
     private String resumeUrl;
     private String university;
     private String degree;
+    private boolean banned = false;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -57,7 +58,7 @@ public class User implements UserDetails {
     public boolean isAccountNonExpired() { return true; }
 
     @Override
-    public boolean isAccountNonLocked() { return true; }
+    public boolean isAccountNonLocked() { return !banned; }
 
     @Override
     public boolean isCredentialsNonExpired() { return true; }
