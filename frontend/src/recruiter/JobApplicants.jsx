@@ -53,20 +53,21 @@ const JobApplicants = () => {
         }
     };
 
-    const handleSendMessage = async (applicationId, studentEmail) => {
+    const handleSendMessage = async (applicationId, studentId) => {
         const content = (chatDraft[applicationId] || '').trim();
         if (!content) {
             toast.error('Message cannot be empty');
             return;
         }
         try {
-            await sendChatMessage(studentEmail, content, applicationId);
+            await sendChatMessage(studentId, content, applicationId);
             toast.success('Message sent');
             setChatDraft((prev) => ({ ...prev, [applicationId]: '' }));
         } catch (error) {
             toast.error('Failed to send message');
         }
     };
+
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -153,7 +154,7 @@ const JobApplicants = () => {
                                                     <div className="text-sm font-semibold mb-1 flex items-center gap-1 text-slate-700"><MessageSquare className="w-4 h-4"/> Message Student</div>
                                                     <div className="flex gap-2">
                                                         <input type="text" placeholder="Write message..." value={chatDraft[app.applicationId] || ''} onChange={(e) => setChatDraft(prev => ({ ...prev, [app.applicationId]: e.target.value }))} className="border rounded px-2 py-1 w-full text-sm" />
-                                                        <button onClick={() => handleSendMessage(app.applicationId, app.email)} className="inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"><Send className="w-4 h-4"/></button>
+                                                        <button onClick={() => handleSendMessage(app.applicationId, app.studentId)} className="inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"><Send className="w-4 h-4"/></button>
                                                     </div>
                                                 </div>
                                             )}

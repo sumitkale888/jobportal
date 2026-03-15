@@ -15,10 +15,10 @@ public class ChatService {
     private final MessageRepository messageRepository;
 
     @Transactional
-    public Message sendMessage(String senderEmail, String recipientEmail, String content, Long applicationId) {
+    public Message sendMessage(Long senderId, Long recipientId, String content, Long applicationId) {
         Message message = Message.builder()
-                .senderEmail(senderEmail)
-                .recipientEmail(recipientEmail)
+                .senderId(senderId)
+                .recipientId(recipientId)
                 .content(content)
                 .sentAt(LocalDateTime.now())
                 .applicationId(applicationId)
@@ -27,16 +27,16 @@ public class ChatService {
     }
 
     @Transactional(readOnly = true)
-    public List<Message> getConversation(String userEmail, String contactEmail) {
-        List<Message> fromTo = messageRepository.findAllBySenderEmailAndRecipientEmailOrderBySentAtAsc(userEmail, contactEmail);
-        List<Message> toFrom = messageRepository.findAllBySenderEmailAndRecipientEmailOrderBySentAtAsc(contactEmail, userEmail);
+    public List<Message> getConversation(Long userId, Long contactId) {
+        List<Message> fromTo = messageRepository.findAllBySenderIdAndRecipientIdOrderBySentAtAsc(userId, contactId);
+        List<Message> toFrom = messageRepository.findAllBySenderIdAndRecipientIdOrderBySentAtAsc(contactId, userId);
         fromTo.addAll(toFrom);
         fromTo.sort((a, b) -> a.getSentAt().compareTo(b.getSentAt()));
         return fromTo;
     }
 
     @Transactional(readOnly = true)
-    public List<Message> getMyMessages(String userEmail) {
-        return messageRepository.findAllBySenderEmailOrRecipientEmailOrderBySentAtAsc(userEmail, userEmail);
+    public List<Message> getMyMessages(Long userId) {
+        return messageRepository.findAllBySenderIdOrRecipientIdOrderBySentAtAsc(userId, userId);
     }
 }

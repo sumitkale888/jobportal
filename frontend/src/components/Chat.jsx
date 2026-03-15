@@ -3,19 +3,9 @@ import { getMyMessages, getConversation, sendChatMessage } from '../api/recruite
 import Navbar from './Navbar';
 import { toast } from 'react-toastify';
 
-const groupByContact = (messages) => {
-  const contacts = {};
-  messages.forEach((msg) => {
-    [msg.senderEmail, msg.recipientEmail].forEach((email) => {
-      contacts[email] = true;
-    });
-  });
-  return Object.keys(contacts).filter((email) => email);
-};
-
 const Chat = () => {
   const [messages, setMessages] = useState([]);
-  const [contact, setContact] = useState('');
+  const [contact, setContact] = useState(null);
   const [conversation, setConversation] = useState([]);
   const [draft, setDraft] = useState('');
 
@@ -28,10 +18,23 @@ const Chat = () => {
     }
   };
 
-  const openConversation = async (contactEmail) => {
+  const getContacts = (msgs) => {
+    const map = new Map();
+    msgs.forEach((msg) => {
+      if (msg.senderId && msg.senderEmail) {
+        map.set(msg.senderId, msg.senderEmail);
+      }
+      if (msg.recipientId && msg.recipientEmail) {
+        map.set(msg.recipientId, msg.recipientEmail);
+      }
+    });
+    return Array.from(map.entries()).map(([id, email]) => ({ id, email }));
+  };
+
+  const openConversation = async (selectedContact) => {
     try {
-      setContact(contactEmail);
-      const data = await getConversation(contactEmail);
+      setContact(selectedContact);
+      const data = await getConversation(selectedContact.id);
       setConversation(data);
     } catch (error) {
       toast.error('Failed to open conversation');
@@ -39,10 +42,10 @@ const Chat = () => {
   };
 
   const handleSend = async () => {
-    if (!contact) return toast.error('Select a contact first');
+    if (!contact?.id) return toast.error('Select a contact first');
     if (!draft.trim()) return toast.error('Write a message first');
     try {
-      await sendChatMessage(contact, draft, null);
+      await sendChatMessage(contact.id, draft, null);
       setDraft('');
       openConversation(contact);
       loadMessages();
@@ -56,7 +59,7 @@ const Chat = () => {
     loadMessages();
   }, []);
 
-  const contactGroups = groupByContact(messages);
+  const contacts = getContacts(messages);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -64,11 +67,11 @@ const Chat = () => {
       <div className="max-w-6xl mx-auto py-8 px-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-lg shadow">
           <h2 className="text-lg font-bold mb-3">Contacts</h2>
-          {contactGroups.length === 0 && <p className="text-gray-500">No messages yet.</p>}
+          {contacts.length === 0 && <p className="text-gray-500">No messages yet.</p>}
           <div className="space-y-2">
-            {contactGroups.map((c) => (
-              <button key={c} onClick={() => openConversation(c)} className={`w-full text-left p-2 rounded ${contact === c ? 'bg-blue-100' : 'bg-gray-50 hover:bg-gray-100'}`}>
-                {c}
+            {contacts.map((c) => (
+              <button key={c.id} onClick={() => openConversation(c)} className={`w-full text-left p-2 rounded ${contact?.id === c.id ? 'bg-blue-100' : 'bg-gray-50 hover:bg-gray-100'}`}>
+                {c.email}
               </button>
             ))}
           </div>
@@ -76,12 +79,12 @@ const Chat = () => {
         <div className="bg-white p-4 rounded-lg shadow lg:col-span-2">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-lg font-bold">Conversation</h2>
-            {contact && <span className="text-sm text-gray-500">With {contact}</span>}
+            {contact && <span className="text-sm text-gray-500">With {contact.email}</span>}
           </div>
           <div className="h-96 overflow-y-auto border border-gray-200 rounded p-2 bg-gray-50 mb-3">
             {conversation.length === 0 && <div className="text-gray-500">Select a contact to view messages.</div>}
             {conversation.map((m) => (
-              <div key={m.id} className={`p-2 mb-1 rounded ${m.senderEmail === contact ? 'bg-white text-left' : 'bg-blue-100 text-right'}`}>
+              <div key={m.id} className={`p-2 mb-1 rounded ${m.senderId === contact?.id ? 'bg-white text-left' : 'bg-blue-100 text-right'}`}>
                 <div className="text-xs text-gray-500">{m.senderEmail}</div>
                 <div className="text-sm">{m.content}</div>
                 <div className="text-xs text-gray-400">{new Date(m.sentAt).toLocaleString()}</div>

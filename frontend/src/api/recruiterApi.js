@@ -57,13 +57,13 @@ export const scheduleInterview = async (applicationId, interviewDateTime, locati
     return response.data;
 };
 
-export const sendChatMessage = async (recipientEmail, content, applicationId) => {
-    const response = await axiosInstance.post('/chat/send', { recipientEmail, content, applicationId });
+export const sendChatMessage = async (recipientId, content, applicationId) => {
+    const response = await axiosInstance.post('/chat/send', { recipientId, content, applicationId });
     return response.data;
 };
 
-export const getConversation = async (contactEmail) => {
-    const response = await axiosInstance.get(`/chat/conversation?contactEmail=${encodeURIComponent(contactEmail)}`);
+export const getConversation = async (contactId) => {
+    const response = await axiosInstance.get(`/chat/conversation?contactId=${contactId}`);
     return response.data;
 };
 
