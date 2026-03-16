@@ -10,6 +10,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [chatUnreadCount, setChatUnreadCount] = useState(0);
 
     // ✅ Helper function to extract role correctly (Same logic as Login.jsx)
     const getRoleFromToken = (decoded) => {
@@ -64,7 +65,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, loading, chatUnreadCount, setChatUnreadCount }}>
             {children}
         </AuthContext.Provider>
     );

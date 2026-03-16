@@ -5,7 +5,7 @@ import { Bell, LogOut, Briefcase, Sparkles, ShieldCheck, MessageSquare } from 'l
 import { getMyNotifications } from '../api/notificationApi'; 
 
 const Navbar = () => {
-    const { user, logout } = useContext(AuthContext);
+    const { user, logout, chatUnreadCount } = useContext(AuthContext);
     const navigate = useNavigate();
     
     const [unreadCount, setUnreadCount] = useState(0);
@@ -74,7 +74,9 @@ const Navbar = () => {
                                 <>
                                     <Link to="/recruiter/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Dashboard</Link>
                                     <Link to="/recruiter/profile" className="text-gray-600 hover:text-blue-600 font-medium">Company Profile</Link>
-                                    <Link to="/chat" className="text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1"><MessageSquare className="w-4 h-4"/> Chat</Link>
+                                    <Link to="/chat" className="text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1 relative"><MessageSquare className="w-4 h-4"/> Chat
+                                        {chatUnreadCount > 0 && <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500" />}
+                                    </Link>
                                     <Link to="/recruiter/post-job" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-bold">Post Job</Link>
                                 </>
                             )}

@@ -4,8 +4,10 @@ import Navbar from './Navbar';
 import { toast } from 'react-toastify';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
+import { useAuth } from '../context/AuthContext';
 
 const Chat = () => {
+  const { setChatUnreadCount } = useAuth();
   const [currentUser, setCurrentUser] = useState(null);
   const [contacts, setContacts] = useState([]);
   const [selectedContactId, setSelectedContactId] = useState(null);
@@ -14,6 +16,7 @@ const Chat = () => {
   const [draft, setDraft] = useState('');
   const [connected, setConnected] = useState(false);
   const stompClientRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const buildContacts = (messages, userId) => {
     const map = new Map();
@@ -21,16 +24,20 @@ const Chat = () => {
       const otherId = m.senderId === userId ? m.recipientId : m.senderId;
       const otherEmail = m.senderId === userId ? m.recipientEmail : m.senderEmail;
       const previous = map.get(otherId);
+      const unread = m.senderId !== userId;
       if (!previous || new Date(m.sentAt) > new Date(previous.sentAt)) {
         map.set(otherId, {
           id: otherId,
           email: otherEmail,
           lastMessage: m.content,
           sentAt: m.sentAt,
+          lastSenderId: m.senderId,
+          unread,
         });
       }
     });
-    return Array.from(map.values()).sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+    return Array.from(map.values())
+      .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
   };
 
   const loadConversation = async (contactId) => {
@@ -39,6 +46,11 @@ const Chat = () => {
       setConversation(conv || []);
       setSelectedContactId(contactId);
       selectedContactIdRef.current = contactId;
+      setContacts((prev) => {
+      const next = prev.map((c) => c.id === contactId ? { ...c, unread: false } : c);
+      setChatUnreadCount(next.filter((c) => c.unread).length);
+      return next;
+    });
     } catch {
       toast.error('Could not load conversation.');
     }
@@ -52,6 +64,7 @@ const Chat = () => {
         const msgs = await getMyMessages();
         const built = buildContacts(msgs, user.id);
         setContacts(built);
+        setChatUnreadCount(built.filter((c) => c.unread).length);
         if (built.length > 0) {
           const firstId = built[0].id;
           const conv = await getConversation(firstId);
@@ -62,13 +75,18 @@ const Chat = () => {
       } catch {
         toast.error('Could not load chat data.');
       }
-    };
-    run();
+    };    run();
   }, []);
 
   useEffect(() => {
     selectedContactIdRef.current = selectedContactId;
   }, [selectedContactId]);
+
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [conversation]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -99,11 +117,14 @@ const Chat = () => {
               const otherEmail = message.senderId === currentUser.id ? message.recipientEmail : message.senderEmail;
               const existing = prev.find((c) => c.id === otherId);
               const next = prev.filter((c) => c.id !== otherId);
+              const incoming = message.senderId !== currentUser.id;
               next.unshift({
                 id: otherId,
                 email: existing?.email || otherEmail || 'Unknown',
                 lastMessage: message.content,
                 sentAt: message.sentAt,
+                lastSenderId: message.senderId,
+                unread: incoming && selectedContactIdRef.current !== otherId,
               });
               return next;
             });
@@ -146,6 +167,8 @@ const Chat = () => {
           email: existing?.email || 'Unknown',
           lastMessage: sent.content,
           sentAt: sent.sentAt,
+          lastSenderId: currentUser?.id,
+          unread: false,
         });
         return next;
       });
@@ -173,7 +196,10 @@ const Chat = () => {
                 className={`w-full text-left border rounded p-2 mb-2 ${selectedContactId === c.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
                 onClick={() => loadConversation(c.id)}
               >
-                <div className='font-medium'>{c.email}</div>
+                <div className='flex items-center justify-between'>
+                  <span className='font-medium'>{c.email}</span>
+                  {c.unread && <span className='h-2 w-2 rounded-full bg-red-500 inline-block' />}
+                </div>
                 <div className='text-xs text-gray-500'>{c.lastMessage}</div>
               </button>
             ))}
@@ -183,7 +209,7 @@ const Chat = () => {
               <h2 className='font-semibold text-lg'>Conversation</h2>
               {selectedContactId ? <p className='text-sm text-gray-500'>Chat with {contacts.find((c) => c.id === selectedContactId)?.email || selectedContactId}</p> : <p className='text-sm text-gray-500'>Select a contact to chat.</p>}
             </div>
-            <div className='flex-1 border rounded p-2 overflow-auto bg-slate-50'>
+            <div ref={messagesContainerRef} className='flex-1 border rounded p-2 overflow-auto bg-slate-50'>
               {conversation.length === 0 ? (
                 <div className='text-gray-500 p-4'>No messages yet.</div>
               ) : (
