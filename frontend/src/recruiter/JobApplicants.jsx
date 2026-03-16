@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getJobApplicants, updateApplicationStatus, scheduleInterview, sendChatMessage, getConversation, downloadResume } from '../api/recruiterApi'; // ✅ Added scheduleInterview
+import { getJobApplicants, rankCandidatesForJob, updateApplicationStatus, scheduleInterview, sendChatMessage, downloadResume } from '../api/recruiterApi';
 import Navbar from '../components/Navbar';
 import { toast } from 'react-toastify';
 import { FileText, Check, X, User, ExternalLink, MessageSquare, Calendar, Send } from 'lucide-react';
@@ -8,22 +8,40 @@ import { FileText, Check, X, User, ExternalLink, MessageSquare, Calendar, Send }
 const JobApplicants = () => {
     const { jobId } = useParams();
     const [applicants, setApplicants] = useState([]);
+    const [rankedCandidates, setRankedCandidates] = useState([]);
+    const [rankStatus, setRankStatus] = useState('idle');
     const [loading, setLoading] = useState(true);
     const [interviewDraft, setInterviewDraft] = useState({});
     const [chatDraft, setChatDraft] = useState({});
 
     useEffect(() => {
         loadApplicants();
+        loadRankedCandidates();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [jobId]);
 
     const loadApplicants = async () => {
         try {
             const data = await getJobApplicants(jobId);
             setApplicants(data);
-        } catch (error) {
+        } catch (err) {
+            console.error(err);
             toast.error("Failed to load applicants");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadRankedCandidates = async () => {
+        setRankStatus('loading');
+        try {
+            const data = await rankCandidatesForJob(jobId);
+            setRankedCandidates(data.ranked_candidates || []);
+            setRankStatus('success');
+        } catch (err) {
+            console.error(err);
+            setRankStatus('error');
+            toast.error('Failed to load AI candidate ranking');
         }
     };
 
@@ -32,7 +50,8 @@ const JobApplicants = () => {
             await updateApplicationStatus(appId, newStatus);
             toast.success(`Applicant ${newStatus.toLowerCase()}!`);
             loadApplicants(); // Refresh list
-        } catch (error) {
+        } catch (err) {
+            console.error(err);
             toast.error("Failed to update status");
         }
     };
@@ -48,7 +67,8 @@ const JobApplicants = () => {
             toast.success('Interview scheduled and student notified');
             setInterviewDraft((prev) => ({ ...prev, [applicationId]: {} }));
             loadApplicants();
-        } catch (error) {
+        } catch (err) {
+            console.error(err);
             toast.error('Failed to schedule interview');
         }
     };
@@ -63,7 +83,8 @@ const JobApplicants = () => {
             await sendChatMessage(studentId, content, applicationId);
             toast.success('Message sent');
             setChatDraft((prev) => ({ ...prev, [applicationId]: '' }));
-        } catch (error) {
+        } catch (err) {
+            console.error(err);
             toast.error('Failed to send message');
         }
     };
@@ -82,7 +103,35 @@ const JobApplicants = () => {
         <div className="min-h-screen bg-gray-50">
             <Navbar />
             <div className="max-w-7xl mx-auto px-4 py-8">
-                <h1 className="text-2xl font-bold text-gray-800 mb-6">Applicants for Job ID: {jobId}</h1>
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                    <h1 className="text-2xl font-bold text-gray-800">Applicants for Job ID: {jobId}</h1>
+                    <button onClick={loadRankedCandidates} className="px-3 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold hover:bg-indigo-700">Refresh AI Rankings</button>
+                </div>
+
+                <div className="mb-4">
+                    <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-3 flex items-center justify-between gap-3">
+                        <div>
+                            <div className="text-xs uppercase tracking-wider text-gray-500 font-semibold">AI candidate ranking</div>
+                            <div className="mt-1 text-slate-700 text-sm">{rankStatus === 'loading' ? 'Loading...' : rankedCandidates.length ? `${rankedCandidates.length} candidates ranked` : 'No ranking available yet.'}</div>
+                        </div>
+                        {rankStatus === 'error' && <span className="text-red-600 text-sm font-semibold">Unable to fetch ranking</span>}
+                    </div>
+                </div>
+
+                {rankedCandidates.length > 0 && (
+                    <div className="bg-white p-3 rounded-lg shadow-sm border border-indigo-100 mb-6">
+                        <div className="text-sm font-semibold text-indigo-700">Top Ranked Candidates</div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                            {rankedCandidates.slice(0, 3).map((candidate) => (
+                                <div key={candidate.candidate_id} className="rounded-lg border border-indigo-200 px-3 py-2 bg-indigo-50">
+                                    <div className="flex items-center justify-between text-sm"><span className="font-semibold">#{candidate.candidate_rank}</span><span className="font-semibold">{candidate.match_percentage}%</span></div>
+                                    <div className="text-xs text-slate-700 mt-1">{candidate.name || 'Candidate'} · ID {candidate.candidate_id}</div>
+                                    <div className="text-xs text-slate-600 mt-1"><strong>Matched:</strong> {candidate.matched_skills?.join(', ') || 'None'}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {loading ? <p>Loading...</p> : (
                     <div className="grid gap-6">

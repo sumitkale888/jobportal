@@ -1,6 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional, Dict, Any
 import pdfplumber
 import io
 import re
@@ -11,6 +11,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 app = FastAPI()
+
+SKILL_BANK = {
+    "python", "java", "spring", "spring boot", "django", "flask", "fastapi", "sql", "mysql", "postgresql",
+    "mongodb", "aws", "azure", "gcp", "docker", "kubernetes", "react", "angular", "vue", "javascript",
+    "typescript", "node", "express", "git", "api", "rest api", "microservices", "html", "css", "ci/cd"
+}
 
 # -----------------------------------------
 # 1. EXTRACT TEXT FROM PDF
@@ -108,5 +114,128 @@ def match_jobs(data: MatchRequest):
     except Exception as e:
         print(f"AI Error: {e}")
         return []
-    
+
+
+class MatchResumeRequest(BaseModel):
+    resume_text: str
+    required_skills: List[str]
+    skill_weight: Optional[float] = 0.7
+    context_weight: Optional[float] = 0.3
+
+
+class CandidateItem(BaseModel):
+    candidate_id: int
+    name: Optional[str] = None
+    resume_text: str
+
+
+class RankCandidatesRequest(BaseModel):
+    job_id: int
+    required_skills: List[str]
+    candidates: List[CandidateItem]
+    skill_weight: Optional[float] = 0.7
+    context_weight: Optional[float] = 0.3
+
+
+def normalize_text(text: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9\s]", " ", text.lower())
+
+
+def extract_skills(resume_text: str) -> List[str]:
+    if not resume_text:
+        return []
+    text = normalize_text(resume_text)
+    found_skills = set()
+    for skill in SKILL_BANK:
+        escaped = re.escape(skill)
+        if re.search(r"\b" + escaped + r"\b", text):
+            found_skills.add(skill)
+    return sorted(found_skills)
+
+
+@app.post("/extract-skills")
+def extract_resume_skills(payload: Dict[str, Any]):
+    resume_text = payload.get("resume_text", "")
+    skills = extract_skills(resume_text)
+    return {"skills": skills}
+
+
+@app.post("/match-resume")
+def match_resume(request: MatchResumeRequest):
+    text = request.resume_text or ""
+    required_skills = [s.strip().lower() for s in request.required_skills if s and s.strip()]
+    required_skills = sorted(set(required_skills))
+
+    normalized = normalize_text(text)
+    matched_skills = []
+    missing_skills = []
+    for skill in required_skills:
+        escaped = re.escape(skill)
+        if re.search(r"\b" + escaped + r"\b", normalized):
+            matched_skills.append(skill.title())
+        else:
+            missing_skills.append(skill.title())
+
+    skill_percent = (len(matched_skills) / len(required_skills)) * 100 if required_skills else 0
+    context_score = 0
+    if text.strip() and required_skills:
+        try:
+            vectorizer = TfidfVectorizer(stop_words='english')
+            corpus = [text, " ".join(required_skills)]
+            mat = vectorizer.fit_transform(corpus)
+            context_score = cosine_similarity(mat[0:1], mat[1:2]).flatten()[0] * 100
+        except Exception:
+            context_score = 0
+
+    match_percentage = round(min((skill_percent * request.skill_weight) + (context_score * request.context_weight), 100.0), 2)
+    return {
+        "matched_skills": sorted(matched_skills),
+        "missing_skills": sorted(missing_skills),
+        "match_percentage": match_percentage
+    }
+
+
+@app.post("/rank-candidates")
+def rank_candidates(request: RankCandidatesRequest):
+    required_skills = [s.strip().lower() for s in request.required_skills if s and s.strip()]
+    required_skills = sorted(set(required_skills))
+
+    ranked = []
+    for candidate in request.candidates:
+        normalized = normalize_text(candidate.resume_text or "")
+        matched_skills = []
+        missing_skills = []
+        for skill in required_skills:
+            escaped = re.escape(skill)
+            if re.search(r"\b" + escaped + r"\b", normalized):
+                matched_skills.append(skill.title())
+            else:
+                missing_skills.append(skill.title())
+
+        skill_percent = (len(matched_skills) / len(required_skills)) * 100 if required_skills else 0
+        context_score = 0
+        if candidate.resume_text and required_skills:
+            try:
+                vectorizer = TfidfVectorizer(stop_words='english')
+                corpus = [candidate.resume_text, " ".join(required_skills)]
+                mat = vectorizer.fit_transform(corpus)
+                context_score = cosine_similarity(mat[0:1], mat[1:2]).flatten()[0] * 100
+            except Exception:
+                context_score = 0
+
+        match_percentage = round(min((skill_percent * request.skill_weight) + (context_score * request.context_weight), 100.0), 2)
+        ranked.append({
+            "candidate_id": candidate.candidate_id,
+            "name": candidate.name,
+            "matched_skills": sorted(matched_skills),
+            "missing_skills": sorted(missing_skills),
+            "match_percentage": match_percentage
+        })
+
+    ranked.sort(key=lambda x: x["match_percentage"], reverse=True)
+    for i, candidate in enumerate(ranked, start=1):
+        candidate["candidate_rank"] = i
+
+    return {"job_id": request.job_id, "ranked_candidates": ranked}
+
 # uvicorn main:app --port 5000 --reload

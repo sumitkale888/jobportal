@@ -41,6 +41,11 @@ export const getJobApplicants = async (jobId) => {
     return response.data;
 };
 
+export const rankCandidatesForJob = async (jobId) => {
+    const response = await axiosInstance.get(`/ai/rank-candidates/${jobId}`);
+    return response.data;
+};
+
 // Update Application Status (Shortlist/Reject)
 export const updateApplicationStatus = async (applicationId, status) => {
     // status can be: APPLIED, SHORTLISTED, REJECTED

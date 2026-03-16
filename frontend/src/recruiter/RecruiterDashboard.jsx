@@ -7,7 +7,6 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const RecruiterDashboard = () => {
-    const [stats, setStats] = useState(null);
     const [jobs, setJobs] = useState([]);
     const [isVerified, setIsVerified] = useState(false); // 🚨 Added for Verification check
     const [loading, setLoading] = useState(true);
@@ -19,9 +18,7 @@ const RecruiterDashboard = () => {
     const loadData = async () => {
         try {
             // Fetch stats and jobs
-            const dashboardData = await getRecruiterDashboard();
-            setStats(dashboardData);
-            
+            await getRecruiterDashboard();
             const jobsData = await getMyPostedJobs();
             setJobs(jobsData);
 
@@ -29,8 +26,8 @@ const RecruiterDashboard = () => {
             const profileRes = await axiosInstance.get('/recruiter/profile');
             setIsVerified(profileRes.data.verified === true || profileRes.data.isVerified === true);
             
-        } catch (err) {
-            console.error(err);
+        } catch {
+            console.error('Failed to load recruiter data');
         } finally {
             setLoading(false);
         }
@@ -44,7 +41,7 @@ const RecruiterDashboard = () => {
             await axiosInstance.delete(`/jobs/${jobId}`);
             toast.success("Job deleted successfully");
             loadData(); // Refresh list
-        } catch (error) {
+        } catch {
             toast.error("Failed to delete job");
         }
     };
@@ -57,9 +54,12 @@ const RecruiterDashboard = () => {
             <div className="max-w-7xl mx-auto px-4 py-8">
                 
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-                    <div className="flex items-center gap-3">
-                        <Briefcase className="w-8 h-8 text-blue-600" />
-                        <h1 className="text-3xl font-bold text-gray-800">Company Dashboard</h1>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-3">
+                          <Briefcase className="w-8 h-8 text-blue-600" />
+                          <h1 className="text-3xl font-bold text-gray-800">Company Dashboard</h1>
+                        </div>
+                        <Link to="/recruiter/ai-matches" className="text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-50">AI Match Rankings</Link>
                     </div>
                     
                     {/* ✅ Conditional Post Job Button */}

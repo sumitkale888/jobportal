@@ -34,3 +34,13 @@ export const getAiRecommendedJobs = async (studentId) => {
     const response = await axiosInstance.get(`/ai/match-jobs/${studentId}`);
     return response.data;
 };
+
+export const extractSkillsFromResumeText = async (resumeText) => {
+    const response = await axiosInstance.post('/ai/extract-skills', { resume_text: resumeText });
+    return response.data;
+};
+
+export const matchResumeToJob = async (resumeText, requiredSkills) => {
+    const response = await axiosInstance.post('/ai/match-resume', { resume_text: resumeText, required_skills: requiredSkills });
+    return response.data;
+};

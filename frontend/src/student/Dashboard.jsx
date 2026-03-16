@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getAllJobs, searchJobs } from '../api/studentApi'; 
 import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
-import { Briefcase, MapPin, Search, Filter, X, Clock, ChevronRight } from 'lucide-react';
+import { Briefcase, MapPin, Search, Filter, X, Clock, ChevronRight, Sparkles } from 'lucide-react';
 
 const StudentDashboard = () => {
     const [jobs, setJobs] = useState([]);
@@ -26,7 +26,7 @@ const StudentDashboard = () => {
         try {
             const data = await getAllJobs();
             setJobs(data);
-        } catch (error) {
+        } catch {
             console.error("Failed to fetch jobs");
         } finally {
             setLoading(false);
@@ -48,7 +48,7 @@ const StudentDashboard = () => {
 
             const data = await searchJobs(cleanFilters);
             setJobs(data);
-        } catch (error) {
+        } catch {
             console.error("Search failed");
         } finally {
             setLoading(false);
@@ -75,6 +75,11 @@ const StudentDashboard = () => {
                         <p className="text-slate-500 text-lg leading-relaxed">
                             Discover career opportunities perfectly matched to your skills and ambitions.
                         </p>
+                        <div className="mt-4">
+                            <Link to="/student/matches" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-100 transition">
+                                <Sparkles className="w-4 h-4"/> View AI Match Dashboard
+                            </Link>
+                        </div>
                     </div>
                     
                     {/* Floating Search Container */}

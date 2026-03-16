@@ -13,6 +13,7 @@ import JobDetails from "./student/JobDetails";
 import Applications from "./student/Applications";
 import MatchedJobs from "./student/MatchedJobs";
 import RecruiterDashboard from "./recruiter/RecruiterDashboard";
+import AiMatches from "./recruiter/AiMatches";
 import PostJob from "./recruiter/PostJob";
 import RecruiterProfile from "./recruiter/RecruiterProfile";
 import JobApplicants from "./recruiter/JobApplicants";
@@ -47,6 +48,7 @@ function App() {
             <Route path="/recruiter/dashboard" element={<RecruiterDashboard />} />
             <Route path="/recruiter/profile" element={<RecruiterProfile />} />
             <Route path="/recruiter/post-job" element={<PostJob />} />
+            <Route path="/recruiter/ai-matches" element={<AiMatches />} />
             <Route path="/recruiter/jobs/:jobId/applicants" element={<JobApplicants />} />
           </Route>
 
