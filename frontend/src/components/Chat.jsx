@@ -273,7 +273,13 @@ const Chat = () => {
           <div className='col-span-8 bg-white rounded shadow p-3 h-[600px] flex flex-col'>
             <div className='mb-2'>
               <h2 className='font-semibold text-lg'>Conversation</h2>
-              {selectedContactId ? <p className='text-sm text-gray-500'>Chat with {contacts.find((c) => c.id === selectedContactId)?.email || selectedContactId}</p> : <p className='text-sm text-gray-500'>Select a contact to chat.</p>}
+              {selectedContactId ? (
+                <p className='text-sm text-gray-500'>
+                  Chat with {contacts.find((c) => c.id === selectedContactId)?.email || 'Unknown Contact'}
+                </p>
+              ) : (
+                <p className='text-sm text-gray-500'>Select a contact to chat.</p>
+              )}
             </div>
             <div ref={messagesContainerRef} className='flex-1 border rounded p-2 overflow-auto bg-slate-50'>
               {conversation.length === 0 ? (
