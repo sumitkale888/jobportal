@@ -1,24 +1,61 @@
-import React, { useContext, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // 🚨 Added useLocation
 import { AuthContext } from '../context/AuthContext';
-import { Bell, LogOut, Briefcase, Sparkles, ShieldCheck, MessageSquare } from 'lucide-react'; // 🚨 Added ShieldCheck icon
-import { getMyNotifications } from '../api/notificationApi'; 
+import { Bell, LogOut, Briefcase, Sparkles, ShieldCheck, MessageSquare } from 'lucide-react';
+import { getMyNotifications } from '../api/notificationApi';
+import { getMyMessages } from '../api/recruiterApi'; // 🚨 Added this import
 
 const Navbar = () => {
-    const { user, logout, chatUnreadCount } = useContext(AuthContext);
+    // 🚨 Destructured setChatUnreadCount from Context
+    const { user, logout, chatUnreadCount, setChatUnreadCount } = useContext(AuthContext);
     const navigate = useNavigate();
+    const location = useLocation(); // Allows us to check if we are currently on the chat page
     
     const [unreadCount, setUnreadCount] = useState(0);
 
-    const fetchUnreadCount = async () => {
+    const fetchUnreadCount = useCallback(async () => {
         try {
-            const data = await getMyNotifications();
-            const unread = data.filter(n => !n.read).length; 
-            setUnreadCount(unread);
-        } catch (error) {
-            console.error("Failed to fetch notifications");
+            const notifData = await getMyNotifications();
+            const unreadNotifs = notifData.filter(n => !n.read).length; 
+            setUnreadCount(unreadNotifs);
+
+            if (location.pathname !== '/chat') {
+                const msgs = await getMyMessages();
+                
+                // Get the timestamps of when we last looked at each chat
+                const readTimestamps = JSON.parse(localStorage.getItem('chatReadTimestamps') || '{}');
+                
+                const map = new Map();
+                msgs.forEach((m) => {
+                    const otherId = m.senderId === user.id ? m.recipientId : m.senderId;
+                    const previous = map.get(otherId);
+                    
+                    if (!previous || new Date(m.sentAt) > new Date(previous.sentAt)) {
+                        
+                        // 1. Did the other person send it?
+                        const fromOther = m.senderId !== user.id;
+                        
+                        // 2. Is the message newer than the last time we looked at this chat?
+                        const lastReadStr = readTimestamps[otherId];
+                        const isNewerThanLastRead = !lastReadStr || new Date(m.sentAt) > new Date(lastReadStr);
+
+                        // It is unread ONLY if they sent it AND it's newer than our last visit
+                        const genuinelyUnread = fromOther && isNewerThanLastRead;
+
+                        map.set(otherId, { unread: genuinelyUnread, sentAt: m.sentAt }); 
+                    }
+                });
+                
+                const unreadChats = Array.from(map.values()).filter(c => c.unread).length;
+                
+                if (setChatUnreadCount) {
+                    setChatUnreadCount(unreadChats);
+                }
+            }
+        } catch {
+            console.error("Failed to fetch notifications or chats");
         }
-    };
+    }, [location.pathname, setChatUnreadCount, user]);
 
     useEffect(() => {
         if (user) {
@@ -26,7 +63,7 @@ const Navbar = () => {
             const interval = setInterval(fetchUnreadCount, 30000); 
             return () => clearInterval(interval);
         }
-    }, [user]);
+    }, [user, location.pathname, fetchUnreadCount]);
 
     const handleLogout = () => {
         logout();
@@ -47,16 +84,12 @@ const Navbar = () => {
                 <div className="flex items-center space-x-6">
                     {user ? (
                         <>
-                            {/* 👑 ADMIN LINKS */}
                             {isAdmin && (
-                                <>
-                                    <Link to="/admin/dashboard" className="text-blue-600 hover:text-blue-800 font-bold flex items-center">
-                                        <ShieldCheck className="w-4 h-4 mr-1" /> Admin Dashboard
-                                    </Link>
-                                </>
+                                <Link to="/admin/dashboard" className="text-blue-600 hover:text-blue-800 font-bold flex items-center">
+                                    <ShieldCheck className="w-4 h-4 mr-1" /> Admin Dashboard
+                                </Link>
                             )}
 
-                            {/* 🎓 STUDENT LINKS */}
                             {isStudent && (
                                 <>
                                     <Link to="/student/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Jobs</Link>
@@ -64,24 +97,30 @@ const Navbar = () => {
                                         <Sparkles className="w-4 h-4 mr-1" /> AI Matches
                                     </Link>
                                     <Link to="/student/applications" className="text-gray-600 hover:text-blue-600 font-medium">My Applications</Link>
-                                    <Link to="/chat" className="text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1"><MessageSquare className="w-4 h-4"/> Chat</Link>
+                                    <Link to="/chat" className="text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1 relative">
+                                        <MessageSquare className="w-4 h-4" /> Chat
+                                        {chatUnreadCount > 0 && location.pathname !== '/chat' && (
+                                            <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+                                        )}
+                                    </Link>
                                     <Link to="/student/profile" className="text-gray-600 hover:text-blue-600 font-medium">Profile</Link>
                                 </>
                             )}
 
-                            {/* 🏢 RECRUITER LINKS */}
                             {isRecruiter && (
                                 <>
                                     <Link to="/recruiter/dashboard" className="text-gray-600 hover:text-blue-600 font-medium">Dashboard</Link>
                                     <Link to="/recruiter/profile" className="text-gray-600 hover:text-blue-600 font-medium">Company Profile</Link>
-                                    <Link to="/chat" className="text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1 relative"><MessageSquare className="w-4 h-4"/> Chat
-                                        {chatUnreadCount > 0 && <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500" />}
+                                    <Link to="/chat" className="text-gray-600 hover:text-blue-600 font-medium flex items-center gap-1 relative">
+                                        <MessageSquare className="w-4 h-4" /> Chat
+                                        {chatUnreadCount > 0 && location.pathname !== '/chat' && (
+                                            <span className="absolute -top-1 -right-2 h-2.5 w-2.5 rounded-full bg-red-500" />
+                                        )}
                                     </Link>
                                     <Link to="/recruiter/post-job" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-bold">Post Job</Link>
                                 </>
                             )}
 
-                            {/* COMMON LOGGED-IN ELEMENTS */}
                             <Link to="/notifications" className="relative p-2 text-gray-600 hover:text-blue-600 transition">
                                 <Bell className="w-6 h-6" />
                                 {unreadCount > 0 && (

@@ -18,21 +18,44 @@ const Chat = () => {
   const stompClientRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
+  const getChatReadTimestamps = () => {
+    return JSON.parse(localStorage.getItem('chatReadTimestamps') || '{}');
+  };
+
+  const markContactRead = (contactId, timestamp) => {
+    const readTimestamps = getChatReadTimestamps();
+    readTimestamps[contactId] = timestamp || new Date().toISOString();
+    localStorage.setItem('chatReadTimestamps', JSON.stringify(readTimestamps));
+  };
+
   const buildContacts = (messages, userId) => {
+    const readTimestamps = getChatReadTimestamps();
     const map = new Map();
     messages.forEach((m) => {
-      const otherId = m.senderId === userId ? m.recipientId : m.senderId;
-      const otherEmail = m.senderId === userId ? m.recipientEmail : m.senderEmail;
+      // Ignore invalid self-to-self messages to avoid showing self as contact.
+      if (m.senderId === m.recipientId && m.senderId === userId) {
+        return;
+      }
+      const isCurrentUserSender = m.senderId === userId;
+      const otherId = isCurrentUserSender ? m.recipientId : m.senderId;
+      const otherEmail = isCurrentUserSender ? m.recipientEmail : m.senderEmail;
+
+      if (!otherId || otherId === userId) {
+        return;
+      }
+
       const previous = map.get(otherId);
-      const unread = m.senderId !== userId;
       if (!previous || new Date(m.sentAt) > new Date(previous.sentAt)) {
+        const lastRead = readTimestamps[otherId];
+        const isUnread = !isCurrentUserSender && (!lastRead || new Date(m.sentAt) > new Date(lastRead));
+
         map.set(otherId, {
           id: otherId,
-          email: otherEmail,
+          email: otherEmail || previous?.email || 'Unknown',
           lastMessage: m.content,
           sentAt: m.sentAt,
           lastSenderId: m.senderId,
-          unread,
+          unread: isUnread,
         });
       }
     });
@@ -46,11 +69,25 @@ const Chat = () => {
       setConversation(conv || []);
       setSelectedContactId(contactId);
       selectedContactIdRef.current = contactId;
+
+      // Mark this chat as read by recording the latest message timestamp.
+      const newest = (conv || []).reduce((latest, m) => {
+        if (!latest || new Date(m.sentAt) > new Date(latest)) return m.sentAt;
+        return latest;
+      }, null);
+      if (newest) {
+        markContactRead(contactId, newest);
+      } else {
+        markContactRead(contactId);
+      }
+
       setContacts((prev) => {
-      const next = prev.map((c) => c.id === contactId ? { ...c, unread: false } : c);
-      setChatUnreadCount(next.filter((c) => c.unread).length);
-      return next;
-    });
+        const next = prev.map((c) => (c.id === contactId ? { ...c, unread: false } : c));
+        if (setChatUnreadCount) {
+          setChatUnreadCount(next.filter((c) => c.unread).length);
+        }
+        return next;
+      });
     } catch {
       toast.error('Could not load conversation.');
     }
@@ -64,19 +101,34 @@ const Chat = () => {
         const msgs = await getMyMessages();
         const built = buildContacts(msgs, user.id);
         setContacts(built);
-        setChatUnreadCount(built.filter((c) => c.unread).length);
+        if (setChatUnreadCount) {
+          setChatUnreadCount(built.filter((c) => c.unread).length);
+        }
         if (built.length > 0) {
           const firstId = built[0].id;
-          const conv = await getConversation(firstId);
-          setConversation(conv || []);
-          setSelectedContactId(firstId);
-          selectedContactIdRef.current = firstId;
+          await loadConversation(firstId);
         }
       } catch {
         toast.error('Could not load chat data.');
       }
-    };    run();
-  }, []);
+    };
+    run();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // 🚨 Add this inside Chat component to sync the unread count when contacts update
+  useEffect(() => {
+    if (setChatUnreadCount) {
+      setChatUnreadCount(contacts.filter((c) => c.unread).length);
+    }
+  }, [contacts, setChatUnreadCount]);
+  // Add this inside your Chat component
+  useEffect(() => {
+    if (selectedContactId) {
+      // Whenever we select a contact, record the current time in localStorage
+      const readTimestamps = JSON.parse(localStorage.getItem('chatReadTimestamps') || '{}');
+      readTimestamps[selectedContactId] = new Date().toISOString();
+      localStorage.setItem('chatReadTimestamps', JSON.stringify(readTimestamps));
+    }
+  }, [selectedContactId, conversation]); // Also update when conversation changes (new messages while viewing)
 
   useEffect(() => {
     selectedContactIdRef.current = selectedContactId;
@@ -112,20 +164,34 @@ const Chat = () => {
               return isForActive ? [...prev, message] : prev;
             });
 
+            const isCurrentUserSender = message.senderId === currentUser.id;
+            const otherId = isCurrentUserSender ? message.recipientId : message.senderId;
+            const otherEmail = isCurrentUserSender ? message.recipientEmail : message.senderEmail;
+            const incoming = !isCurrentUserSender;
+
+            if (!otherId || otherId === currentUser.id) {
+              return;
+            }
+
+            if (incoming && selectedContactIdRef.current === otherId) {
+              markContactRead(otherId, message.sentAt);
+            }
+
             setContacts((prev) => {
-              const otherId = message.senderId === currentUser.id ? message.recipientId : message.senderId;
-              const otherEmail = message.senderId === currentUser.id ? message.recipientEmail : message.senderEmail;
               const existing = prev.find((c) => c.id === otherId);
               const next = prev.filter((c) => c.id !== otherId);
-              const incoming = message.senderId !== currentUser.id;
+              const isUnread = incoming && selectedContactIdRef.current !== otherId;
               next.unshift({
                 id: otherId,
                 email: existing?.email || otherEmail || 'Unknown',
                 lastMessage: message.content,
                 sentAt: message.sentAt,
                 lastSenderId: message.senderId,
-                unread: incoming && selectedContactIdRef.current !== otherId,
+                unread: isUnread,
               });
+              if (setChatUnreadCount) {
+                setChatUnreadCount(next.filter((c) => c.unread).length);
+              }
               return next;
             });
           } catch (e) {
@@ -145,7 +211,7 @@ const Chat = () => {
         stompClientRef.current.deactivate();
       }
     };
-  }, [currentUser]);
+  }, [currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSend = async (e) => {
     e.preventDefault();
