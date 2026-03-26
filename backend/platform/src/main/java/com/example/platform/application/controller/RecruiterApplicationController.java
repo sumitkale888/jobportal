@@ -24,7 +24,27 @@ public class RecruiterApplicationController {
     @GetMapping("/job/{jobId}")
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<List<ApplicantDto>> getJobApplicants(@PathVariable Long jobId, Principal principal) {
-        return ResponseEntity.ok(applicationService.getApplicantsForJob(jobId, principal.getName()));
+        System.out.println("\n" + "=".repeat(60));
+        System.out.println("📥 GET /job/{jobId} - FETCHING APPLICANTS");
+        System.out.println("=".repeat(60));
+        System.out.println("Job ID: " + jobId);
+        System.out.println("Recruiter email: " + principal.getName());
+        
+        List<ApplicantDto> applicants = applicationService.getApplicantsForJob(jobId, principal.getName());
+        
+        System.out.println("✅ Found " + applicants.size() + " applicants:");
+        applicants.forEach(app -> {
+            System.out.println("  - Application ID: " + app.getApplicationId());
+            System.out.println("    Student ID: " + app.getStudentId());
+            System.out.println("    Student User ID: " + app.getStudentUserId());
+            System.out.println("    Name: " + app.getName());
+            System.out.println("    Email: " + app.getEmail());
+            System.out.println("    Status: " + app.getStatus());
+            System.out.println();
+        });
+        System.out.println("=".repeat(60) + "\n");
+        
+        return ResponseEntity.ok(applicants);
     }
 
     @PutMapping("/{applicationId}/status")

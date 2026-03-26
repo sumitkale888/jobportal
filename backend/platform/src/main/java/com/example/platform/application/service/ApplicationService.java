@@ -108,6 +108,7 @@ public class ApplicationService {
         return applicationRepository.findByJobId(jobId).stream().map(app -> ApplicantDto.builder()
                 .applicationId(app.getId())
                 .studentId(app.getStudent().getId())
+            .studentUserId(app.getStudent().getUser().getId())
                 .name(app.getStudent().getUser().getName())
                 .email(app.getStudent().getUser().getEmail())
                 .university(app.getStudent().getUniversity())

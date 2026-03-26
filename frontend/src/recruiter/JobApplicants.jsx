@@ -15,6 +15,7 @@ const JobApplicants = () => {
     const [chatDraft, setChatDraft] = useState({});
 
     useEffect(() => {
+        console.log('📥 JobApplicants mounted or jobId changed:', jobId);
         loadApplicants();
         loadRankedCandidates();
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -22,10 +23,15 @@ const JobApplicants = () => {
 
     const loadApplicants = async () => {
         try {
+            console.log('📥 Loading applicants for job:', jobId);
             const data = await getJobApplicants(jobId);
+            console.log('📥 Got applicants:', data);
+            data.forEach((app, idx) => {
+                console.log(`   [${idx}] applicationId=${app.applicationId}, studentId=${app.studentId}, studentName=${app.studentName}, studentEmail=${app.studentEmail}, status=${app.status}`);
+            });
             setApplicants(data);
         } catch (err) {
-            console.error(err);
+            console.error('❌ Error loading applicants:', err);
             toast.error("Failed to load applicants");
         } finally {
             setLoading(false);
@@ -73,18 +79,37 @@ const JobApplicants = () => {
         }
     };
 
-    const handleSendMessage = async (applicationId, studentId) => {
+    const handleSendMessage = async (e, applicationId, studentUserId) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         const content = (chatDraft[applicationId] || '').trim();
+        console.log('📤 handleSendMessage called');
+        console.log('   applicationId:', applicationId);
+        console.log('   studentUserId:', studentUserId);
+        console.log('   content:', content);
+        console.log('   applicants data:', applicants);
+        const applicant = applicants.find(a => a.applicationId === applicationId);
+        console.log('   found applicant:', applicant);
+        
         if (!content) {
             toast.error('Message cannot be empty');
             return;
         }
+        if (!studentUserId) {
+            console.error('❌ studentUserId is null/undefined!');
+            toast.error('Student ID not found');
+            return;
+        }
+        
         try {
-            await sendChatMessage(studentId, content, applicationId);
+            console.log('📤 Sending message to studentUserId:', studentUserId, 'with applicationId:', applicationId);
+            await sendChatMessage(studentUserId, content, applicationId);
+            console.log('✅ Message sent successfully');
             toast.success('Message sent');
             setChatDraft((prev) => ({ ...prev, [applicationId]: '' }));
         } catch (err) {
-            console.error(err);
+            console.error('❌ Error sending message:', err);
             toast.error('Failed to send message');
         }
     };
@@ -203,7 +228,7 @@ const JobApplicants = () => {
                                                     <div className="text-sm font-semibold mb-1 flex items-center gap-1 text-slate-700"><MessageSquare className="w-4 h-4"/> Message Student</div>
                                                     <div className="flex gap-2">
                                                         <input type="text" placeholder="Write message..." value={chatDraft[app.applicationId] || ''} onChange={(e) => setChatDraft(prev => ({ ...prev, [app.applicationId]: e.target.value }))} className="border rounded px-2 py-1 w-full text-sm" />
-                                                        <button onClick={() => handleSendMessage(app.applicationId, app.studentId)} className="inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"><Send className="w-4 h-4"/></button>
+                                                        <button onClick={(e) => handleSendMessage(e, app.applicationId, app.studentUserId)} className="inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap"><Send className="w-4 h-4"/></button>
                                                     </div>
                                                 </div>
                                             )}

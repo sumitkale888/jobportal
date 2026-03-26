@@ -1,15 +1,14 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // 🚨 Added useLocation
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { Bell, LogOut, Briefcase, Sparkles, ShieldCheck, MessageSquare } from 'lucide-react';
 import { getMyNotifications } from '../api/notificationApi';
-import { getMyMessages } from '../api/recruiterApi'; // 🚨 Added this import
+import { getMyMessages } from '../api/recruiterApi';
 
 const Navbar = () => {
-    // 🚨 Destructured setChatUnreadCount from Context
     const { user, logout, chatUnreadCount, setChatUnreadCount } = useContext(AuthContext);
     const navigate = useNavigate();
-    const location = useLocation(); // Allows us to check if we are currently on the chat page
+    const location = useLocation(); 
     
     const [unreadCount, setUnreadCount] = useState(0);
 
@@ -19,41 +18,25 @@ const Navbar = () => {
             const unreadNotifs = notifData.filter(n => !n.read).length; 
             setUnreadCount(unreadNotifs);
 
+            // Fetch chat messages and rely strictly on the backend 'isRead' flag
             if (location.pathname !== '/chat') {
                 const msgs = await getMyMessages();
                 
-                // Get the timestamps of when we last looked at each chat
-                const readTimestamps = JSON.parse(localStorage.getItem('chatReadTimestamps') || '{}');
-                
-                const map = new Map();
+                const unreadSenders = new Set();
                 msgs.forEach((m) => {
-                    const otherId = m.senderId === user.id ? m.recipientId : m.senderId;
-                    const previous = map.get(otherId);
-                    
-                    if (!previous || new Date(m.sentAt) > new Date(previous.sentAt)) {
-                        
-                        // 1. Did the other person send it?
-                        const fromOther = m.senderId !== user.id;
-                        
-                        // 2. Is the message newer than the last time we looked at this chat?
-                        const lastReadStr = readTimestamps[otherId];
-                        const isNewerThanLastRead = !lastReadStr || new Date(m.sentAt) > new Date(lastReadStr);
-
-                        // It is unread ONLY if they sent it AND it's newer than our last visit
-                        const genuinelyUnread = fromOther && isNewerThanLastRead;
-
-                        map.set(otherId, { unread: genuinelyUnread, sentAt: m.sentAt }); 
+                    // If the message was sent TO the current user and is NOT read
+                    if (m.recipientId === user.id && m.isRead === false) {
+                        unreadSenders.add(m.senderId);
                     }
                 });
                 
-                const unreadChats = Array.from(map.values()).filter(c => c.unread).length;
-                
+                // Set the count to the number of unique contacts with unread messages
                 if (setChatUnreadCount) {
-                    setChatUnreadCount(unreadChats);
+                    setChatUnreadCount(unreadSenders.size);
                 }
             }
-        } catch {
-            console.error("Failed to fetch notifications or chats");
+        } catch (error) {
+            console.error("Failed to fetch notifications or chats", error);
         }
     }, [location.pathname, setChatUnreadCount, user]);
 

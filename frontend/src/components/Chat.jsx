@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getMyMessages, getConversation, sendChatMessage, getChatMe } from '../api/recruiterApi';
+import axiosInstance from '../api/axiosInstance';
 import Navbar from './Navbar';
 import { toast } from 'react-toastify';
 import { Client } from '@stomp/stompjs';
@@ -17,37 +18,52 @@ const Chat = () => {
   const [connected, setConnected] = useState(false);
   const stompClientRef = useRef(null);
   const messagesContainerRef = useRef(null);
+  const [isTabActive, setIsTabActive] = useState(true);
 
-  const getChatReadTimestamps = () => {
-    return JSON.parse(localStorage.getItem('chatReadTimestamps') || '{}');
-  };
+  // Track browser tab visibility
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabActive(!document.hidden);
+    };
 
-  const markContactRead = (contactId, timestamp) => {
-    const readTimestamps = getChatReadTimestamps();
-    readTimestamps[contactId] = timestamp || new Date().toISOString();
-    localStorage.setItem('chatReadTimestamps', JSON.stringify(readTimestamps));
-  };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
+  // Build contacts list from messages using isRead and message direction
   const buildContacts = (messages, userId) => {
-    const readTimestamps = getChatReadTimestamps();
+    console.log('👥 buildContacts called with', messages.length, 'messages, userId:', userId);
     const map = new Map();
-    messages.forEach((m) => {
-      // Ignore invalid self-to-self messages to avoid showing self as contact.
+    messages.forEach((m, idx) => {
+      console.log(`  [${idx}] msg from ${m.senderId} to ${m.recipientId}: "${m.content.substring(0, 30)}..."`);
+      
+      // Ignore invalid self-to-self messages
       if (m.senderId === m.recipientId && m.senderId === userId) {
+        console.log(`    ⚠️ Skipped: self-to-self message`);
         return;
       }
+      
       const isCurrentUserSender = m.senderId === userId;
       const otherId = isCurrentUserSender ? m.recipientId : m.senderId;
       const otherEmail = isCurrentUserSender ? m.recipientEmail : m.senderEmail;
 
       if (!otherId || otherId === userId) {
+        console.log(`    ⚠️ Skipped: invalid otherId or self message`);
         return;
       }
 
+      console.log(`    ✅ Processing: otherId=${otherId}, email=${otherEmail}, isCurrentUserSender=${isCurrentUserSender}`);
+
       const previous = map.get(otherId);
       if (!previous || new Date(m.sentAt) > new Date(previous.sentAt)) {
-        const lastRead = readTimestamps[otherId];
-        const isUnread = !isCurrentUserSender && (!lastRead || new Date(m.sentAt) > new Date(lastRead));
+        // Show unread badge ONLY if:
+        // 1. Message is sent TO current user (they didn't send it)
+        // 2. AND the message is marked as unread (!isRead)
+        const isUnread = !isCurrentUserSender && m.isRead === false;
+
+        console.log(`    📍 Added to map: otherId=${otherId}, isUnread=${isUnread}`);
 
         map.set(otherId, {
           id: otherId,
@@ -57,30 +73,47 @@ const Chat = () => {
           lastSenderId: m.senderId,
           unread: isUnread,
         });
+      } else {
+        console.log(`    ⏭️ Skipped: older message than current`);
       }
     });
-    return Array.from(map.values())
+    const result = Array.from(map.values())
       .sort((a, b) => new Date(b.sentAt) - new Date(a.sentAt));
+    console.log('👥 buildContacts result:', result.length, 'contacts');
+    result.forEach(c => console.log(`    - ${c.email} (unread: ${c.unread})`));
+    return result;
+  };
+
+  // Mark messages as read on backend
+  const markMessagesAsReadOnBackend = async (senderId) => {
+    try {
+      await axiosInstance.post('/chat/mark-as-read', { senderId });
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
   };
 
   const loadConversation = async (contactId) => {
     try {
+      console.log('📥 Loading conversation for contact:', contactId);
       const conv = await getConversation(contactId);
+      console.log('📥 Got conversation, length:', conv?.length || 0);
+      if (conv && conv.length > 0) {
+        console.log('  Messages in conversation:');
+        conv.forEach((m, idx) => {
+          console.log(`    [${idx}] id=${m.id}, senderId=${m.senderId}, sentAt=${m.sentAt}, content="${m.content.substring(0, 30)}..."`);
+        });
+      }
+      
       setConversation(conv || []);
       setSelectedContactId(contactId);
       selectedContactIdRef.current = contactId;
+      console.log('✅ setConversation and setSelectedContactId updated');
 
-      // Mark this chat as read by recording the latest message timestamp.
-      const newest = (conv || []).reduce((latest, m) => {
-        if (!latest || new Date(m.sentAt) > new Date(latest)) return m.sentAt;
-        return latest;
-      }, null);
-      if (newest) {
-        markContactRead(contactId, newest);
-      } else {
-        markContactRead(contactId);
-      }
+      // Mark unread messages from this contact as read on backend
+      await markMessagesAsReadOnBackend(contactId);
 
+      // Update contacts to mark this one as read
       setContacts((prev) => {
         const next = prev.map((c) => (c.id === contactId ? { ...c, unread: false } : c));
         if (setChatUnreadCount) {
@@ -88,99 +121,197 @@ const Chat = () => {
         }
         return next;
       });
-    } catch {
+      console.log('✅ loadConversation completed successfully');
+    } catch (error) {
+      console.error('❌ Error loading conversation:', error);
       toast.error('Could not load conversation.');
     }
   };
 
+  // Initial load of chat data
   useEffect(() => {
+    console.log('🔄 Chat component mounted, loading initial data...');
     const run = async () => {
       try {
         const user = await getChatMe();
+        console.log('👤 Current user:', user);
         setCurrentUser(user);
+        
         const msgs = await getMyMessages();
+        console.log('📬 All messages loaded:', msgs.length > 0 ? msgs.length + ' messages' : 'No messages');
+        
         const built = buildContacts(msgs, user.id);
+        console.log('👥 Contacts built:', built.length);
+        console.log('  Contacts:', built.map(c => ({ id: c.id, email: c.email })));
+        
         setContacts(built);
         if (setChatUnreadCount) {
-          setChatUnreadCount(built.filter((c) => c.unread).length);
+          const unreadCount = built.filter((c) => c.unread).length;
+          console.log('🔴 Unread count:', unreadCount);
+          setChatUnreadCount(unreadCount);
         }
+        
         if (built.length > 0) {
           const firstId = built[0].id;
+          console.log('📌 Loading first contact:', firstId);
           await loadConversation(firstId);
         }
-      } catch {
+      } catch (error) {
+        console.error('❌ Error loading chat data:', error);
         toast.error('Could not load chat data.');
       }
     };
     run();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  // 🚨 Add this inside Chat component to sync the unread count when contacts update
+
+  // Sync unread count when contacts change
   useEffect(() => {
     if (setChatUnreadCount) {
       setChatUnreadCount(contacts.filter((c) => c.unread).length);
     }
   }, [contacts, setChatUnreadCount]);
-  // Add this inside your Chat component
-  useEffect(() => {
-    if (selectedContactId) {
-      // Whenever we select a contact, record the current time in localStorage
-      const readTimestamps = JSON.parse(localStorage.getItem('chatReadTimestamps') || '{}');
-      readTimestamps[selectedContactId] = new Date().toISOString();
-      localStorage.setItem('chatReadTimestamps', JSON.stringify(readTimestamps));
-    }
-  }, [selectedContactId, conversation]); // Also update when conversation changes (new messages while viewing)
 
+  // Update selected contact ref
   useEffect(() => {
     selectedContactIdRef.current = selectedContactId;
   }, [selectedContactId]);
 
+  const handleRefresh = async () => {
+    console.log('🔄 Manually refreshing conversations...');
+    try {
+      const user = await getChatMe();
+      const msgs = await getMyMessages();
+      console.log('📬 Refreshed - got', msgs.length, 'messages');
+      
+      const built = buildContacts(msgs, user.id);
+      console.log('👥 Refreshed contacts:', built.length);
+      
+      setContacts(built);
+      if (setChatUnreadCount) {
+        setChatUnreadCount(built.filter((c) => c.unread).length);
+      }
+      
+      // If we have a selected contact, reload its conversation
+      if (selectedContactId) {
+        console.log('🔄 Reloading conversation for contact:', selectedContactId);
+        await loadConversation(selectedContactId);
+      } else if (built.length > 0) {
+        console.log('🔄 Loading first contact after refresh');
+        await loadConversation(built[0].id);
+      }
+      
+      toast.success('✅ Conversations refreshed!');
+    } catch (error) {
+      console.error('❌ Error refreshing:', error);
+      toast.error('Failed to refresh conversations');
+    }
+  };
   useEffect(() => {
+    console.log('🔄 Conversation updated, length:', conversation.length);
+    conversation.forEach((msg, idx) => {
+      console.log(`  [${idx}] From ${msg.senderId}: "${msg.content}" at ${msg.sentAt}`);
+    });
+    
     if (messagesContainerRef.current) {
+      console.log('📜 Scrolling to bottom');
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   }, [conversation]);
 
+  // WebSocket connection setup
   useEffect(() => {
     if (!currentUser) return;
 
-    const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:8091/ws-chat';
+    const baseWsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:8091/ws-chat';
+    console.log('🔌 Initializing WebSocket connection to:', baseWsUrl);
+    
+    // Check if connection already exists and is active
+    if (stompClientRef.current && stompClientRef.current.connected) {
+      console.log('✅ WebSocket already connected');
+      return;
+    }
+
     const client = new Client({
-      webSocketFactory: () => new SockJS(wsUrl),
+      webSocketFactory: () => {
+        console.log('🔌 Creating SockJS connection...');
+        return new SockJS(baseWsUrl);
+      },
       reconnectDelay: 5000,
-      debug: () => {},
+      maxWebSocketFrameSize: 1024 * 1024,  // Increased to 1MB for larger messages
+      debug: (msg) => console.debug('[STOMP]', msg),
       onConnect: () => {
-        console.info('STOMP connected for user', currentUser?.id);
+        console.info('✅ STOMP connected for user', currentUser?.id);
         setConnected(true);
         client.subscribe(`/topic/chat/${currentUser.id}`, (frame) => {
-          console.info('STOMP frame received', frame);
+          console.info('📨 STOMP frame received');
+          console.info('  Frame body:', frame.body);
           try {
             const message = JSON.parse(frame.body);
-            setConversation((prev) => {
-              const activeId = selectedContactIdRef.current;
-              if (!activeId) return prev;
-              const isForActive =
-                (message.senderId === activeId && message.recipientId === currentUser.id) ||
-                (message.senderId === currentUser.id && message.recipientId === activeId);
-              return isForActive ? [...prev, message] : prev;
-            });
-
+            console.log('📨 Parsed message:', message);
+            console.log('  senderId:', message.senderId);
+            console.log('  recipientId:', message.recipientId);
+            console.log('  content:', message.content);
+            console.log('  currentUser.id:', currentUser?.id);
+            
             const isCurrentUserSender = message.senderId === currentUser.id;
             const otherId = isCurrentUserSender ? message.recipientId : message.senderId;
             const otherEmail = isCurrentUserSender ? message.recipientEmail : message.senderEmail;
             const incoming = !isCurrentUserSender;
 
+            console.log('  isCurrentUserSender:', isCurrentUserSender);
+            console.log('  otherId:', otherId);
+            console.log('  incoming:', incoming);
+
             if (!otherId || otherId === currentUser.id) {
+              console.warn('⚠️ Invalid message: selfId or otherId matches currentUser');
               return;
             }
 
-            if (incoming && selectedContactIdRef.current === otherId) {
-              markContactRead(otherId, message.sentAt);
+            const activeId = selectedContactIdRef.current;
+            const isForActive =
+              (message.senderId === activeId && message.recipientId === currentUser.id) ||
+              (message.senderId === currentUser.id && message.recipientId === activeId);
+
+            console.log(`💬 Message routing:`);
+            console.log(`  activeId (viewing): ${activeId}`); 
+            console.log(`  isForActive: ${isForActive}`);
+
+            // Add to conversation if for active contact
+            if (isForActive) {
+              setConversation((prev) => {
+                const updated = [...prev, message];
+                console.log('✅ Message added to conversation via WebSocket, new length:', updated.length);
+                return updated;
+              });
+            } else {
+              console.log('⚙️ Message received but not for active contact, updating contacts list only');
             }
 
+            // If incoming message while viewing that contact AND tab is active, mark as read on backend
+            if (incoming && isForActive && isTabActive) {
+              axiosInstance.post('/chat/mark-as-read', { senderId: otherId }).catch(e => console.error("Failed to auto-read", e));
+            }
+
+            // Update contacts list
             setContacts((prev) => {
+              console.log('📋 Updating contacts list');
               const existing = prev.find((c) => c.id === otherId);
+              console.log('  Found existing:', existing?.email);
               const next = prev.filter((c) => c.id !== otherId);
-              const isUnread = incoming && selectedContactIdRef.current !== otherId;
+              
+              // Show red unread indicator ONLY if:
+              // 1. Message is incoming (recipient is current user)
+              // 2. AND message is marked as unread (isRead === false)
+              // 3. AND (we're not viewing that contact OR tab is not active)
+              const isUnread = incoming && message.isRead === false && 
+                (!isForActive || !isTabActive);
+
+              console.log('  isUnread calculation:');
+              console.log('    incoming:', incoming);
+              console.log('    isRead:', message.isRead);
+              console.log('    !isForActive || !isTabActive:', (!isForActive || !isTabActive));
+              console.log('    Result isUnread:', isUnread);
+
               next.unshift({
                 id: otherId,
                 email: existing?.email || otherEmail || 'Unknown',
@@ -189,44 +320,121 @@ const Chat = () => {
                 lastSenderId: message.senderId,
                 unread: isUnread,
               });
+              
+              console.log('  Contact moved to top with unread:', isUnread);
+              
               if (setChatUnreadCount) {
                 setChatUnreadCount(next.filter((c) => c.unread).length);
               }
               return next;
             });
           } catch (e) {
-            console.error('Invalid STOMP payload', e);
+            console.error('❌ Invalid STOMP payload', e);
           }
         });
       },
-      onDisconnect: () => setConnected(false),
-      onWebSocketError: (err) => console.error('WebSocket error', err),
+      onDisconnect: () => {
+        console.warn('⚠️ STOMP disconnected');
+        setConnected(false);
+      },
+      onWebSocketError: (err) => {
+        console.error('❌ WebSocket error', err);
+        setConnected(false);
+        // Client will auto-retry with reconnectDelay
+      },
+      onStompError: (frame) => {
+        console.error('❌ STOMP error', frame.headers, frame.body);
+        setConnected(false);
+      },
+      onWebSocketClose: () => {
+        console.warn('⚠️ WebSocket closed');
+        setConnected(false);
+      },
     });
 
+    console.log('🔌 Activating STOMP client');
     client.activate();
     stompClientRef.current = client;
 
     return () => {
+      // Don't deactivate on every re-render, keep connection alive
+      // Only deactivate when component fully unmounts
+    };
+  }, [currentUser]); // Only create connection when user changes, not on every re-render
+  
+  // Cleanup on component unmount
+  useEffect(() => {
+    return () => {
       if (stompClientRef.current) {
+        console.log('🔌 Deactivating WebSocket connection on unmount');
         stompClientRef.current.deactivate();
       }
     };
-  }, [currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!draft.trim()) return;
+    console.log('📤 FORM SUBMITTED - handleSend called');
+    console.log('  Draft:', draft);
+    console.log('  SelectedContactId:', selectedContactId);
+    
+    if (!draft.trim()) {
+      console.warn('⚠️ Draft is empty');
+      return;
+    }
     if (!selectedContactId) {
+      console.warn('⚠️ No contact selected');
       toast.warning('Select a contact first.');
       return;
     }
 
     try {
+      console.log('📤 Sending message to:', selectedContactId, 'Content:', draft.trim());
       const sent = await sendChatMessage(selectedContactId, draft.trim(), null);
-      setConversation((prev) => [...prev, sent]);
+      console.log('✅ Message sent successfully from API:', sent);
+      console.log('  Full response object:', JSON.stringify(sent, null, 2));
+      
+      // Validate the response
+      if (!sent || !sent.id) {
+        console.error('❌ Invalid response from server - missing id:', sent);
+        toast.error('Invalid server response - message ID missing');
+        return;
+      }
+      
+      if (!sent.sentAt) {
+        console.error('❌ Invalid response from server - missing sentAt:', sent);
+        toast.error('Invalid server response - timestamp missing');
+        return;
+      }
+      
+      console.log('📝 Current state before update:');
+      console.log('  conversation before:', conversation.length, 'messages');
+      console.log('  selectedContactId:', selectedContactId);
+      console.log('  currentUser?.id:', currentUser?.id);
+      
+      setConversation((prev) => {
+        console.log('📝 Inside setConversation callback');
+        console.log('  Previous conversation length:', prev.length);
+        console.log('  Message to add:', sent);
+        const updated = [...prev, sent];
+        console.log('  New conversation length:', updated.length);
+        console.log('  Updated conversation:', updated);
+        return updated;
+      });
+      
+      console.log('📝 Called setConversation');
       setDraft('');
+      console.log('📝 Called setDraft("")');
+      
+      // ✅ Reload conversation to ensure it's in sync with server
+      // The message has already been added to state immediately above
+      // This reload ensures we catch any server-side processing or ordering
+      await loadConversation(selectedContactId);
+      
       setContacts((prev) => {
+        console.log('📝 Inside setContacts callback');
         const existing = prev.find((c) => c.id === selectedContactId);
+        console.log('  Found existing contact:', existing?.email);
         const next = prev.filter((c) => c.id !== selectedContactId);
         next.unshift({
           id: selectedContactId,
@@ -236,10 +444,15 @@ const Chat = () => {
           lastSenderId: currentUser?.id,
           unread: false,
         });
+        console.log('  Updated contacts, moved to top');
         return next;
       });
-    } catch {
-      toast.error('Could not send message.');
+      
+      toast.success('✅ Message sent!');
+    } catch (error) {
+      console.error('❌ Error sending message:', error);
+      console.error('❌ Error response:', error.response?.data || error.message);
+      toast.error('Could not send message: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -247,10 +460,17 @@ const Chat = () => {
     <div className='min-h-screen bg-slate-100'>
       <Navbar />
       <div className='max-w-5xl mx-auto p-4'>
-        <div className='mb-2 text-right'>
+        <div className='mb-2 flex justify-between items-center'>
           <span className={`px-2 py-1 rounded ${connected ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-800'}`}>
             {connected ? 'Live connected' : 'Disconnected'}
           </span>
+          <button 
+            onClick={handleRefresh}
+            className='px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600'
+            title='Reload conversations'
+          >
+            🔄 Refresh
+          </button>
         </div>
         <div className='grid grid-cols-12 gap-4'>
           <div className='col-span-4 bg-white rounded shadow p-3 h-[600px] overflow-auto'>
@@ -285,7 +505,24 @@ const Chat = () => {
               {conversation.length === 0 ? (
                 <div className='text-gray-500 p-4'>No messages yet.</div>
               ) : (
-                conversation.map((m) => {
+                conversation.map((m, idx) => {
+                  if (!m) {
+                    console.warn('⚠️ Message is null or undefined at index:', idx);
+                    return null;
+                  }
+                  
+                  if (!m.id || !m.sentAt) {
+                    console.warn('⚠️ Message missing required fields:', { id: m.id, sentAt: m.sentAt, content: m.content });
+                    return null;
+                  }
+                  
+                  if (!m.content) {
+                    console.warn('⚠️ Message missing content:', m);
+                    return null;
+                  }
+                  
+                  console.log(`Rendering message [${idx}]:`, { id: m.id, senderId: m.senderId, currentUserId: currentUser?.id, content: m.content, sentAt: m.sentAt });
+                  
                   const isMine = currentUser && m.senderId === currentUser.id;
                   return (
                     <div key={`${m.id}-${m.sentAt}`} className={`mb-2 flex ${isMine ? 'justify-end' : 'justify-start'}`}>

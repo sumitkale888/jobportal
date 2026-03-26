@@ -63,7 +63,12 @@ export const scheduleInterview = async (applicationId, interviewDateTime, locati
 };
 
 export const sendChatMessage = async (recipientId, content, applicationId) => {
+    console.log('📤 API sendChatMessage called:');
+    console.log('   recipientId:', recipientId);
+    console.log('   content:', content);
+    console.log('   applicationId:', applicationId);
     const response = await axiosInstance.post('/chat/send', { recipientId, content, applicationId });
+    console.log('📤 API response:', response.data);
     return response.data;
 };
 

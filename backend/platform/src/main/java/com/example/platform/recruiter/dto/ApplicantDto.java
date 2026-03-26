@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class ApplicantDto {
     private Long applicationId;
     private Long studentId;
+    private Long studentUserId;
     private String name;
     private String email;
     private String university;
