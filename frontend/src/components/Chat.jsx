@@ -19,6 +19,15 @@ const Chat = () => {
   const stompClientRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const [isTabActive, setIsTabActive] = useState(true);
+  const seenMessageIdsRef = useRef(new Set());
+
+  const appendMessageIfMissing = (message) => {
+    setConversation((prev) => {
+      if (!message?.id) return [...prev, message];
+      if (prev.some((m) => m?.id === message.id)) return prev;
+      return [...prev, message];
+    });
+  };
 
   // Track browser tab visibility
   useEffect(() => {
@@ -176,36 +185,6 @@ const Chat = () => {
     selectedContactIdRef.current = selectedContactId;
   }, [selectedContactId]);
 
-  const handleRefresh = async () => {
-    console.log('🔄 Manually refreshing conversations...');
-    try {
-      const user = await getChatMe();
-      const msgs = await getMyMessages();
-      console.log('📬 Refreshed - got', msgs.length, 'messages');
-      
-      const built = buildContacts(msgs, user.id);
-      console.log('👥 Refreshed contacts:', built.length);
-      
-      setContacts(built);
-      if (setChatUnreadCount) {
-        setChatUnreadCount(built.filter((c) => c.unread).length);
-      }
-      
-      // If we have a selected contact, reload its conversation
-      if (selectedContactId) {
-        console.log('🔄 Reloading conversation for contact:', selectedContactId);
-        await loadConversation(selectedContactId);
-      } else if (built.length > 0) {
-        console.log('🔄 Loading first contact after refresh');
-        await loadConversation(built[0].id);
-      }
-      
-      toast.success('✅ Conversations refreshed!');
-    } catch (error) {
-      console.error('❌ Error refreshing:', error);
-      toast.error('Failed to refresh conversations');
-    }
-  };
   useEffect(() => {
     console.log('🔄 Conversation updated, length:', conversation.length);
     conversation.forEach((msg, idx) => {
@@ -225,10 +204,14 @@ const Chat = () => {
     const baseWsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:8091/ws-chat';
     console.log('🔌 Initializing WebSocket connection to:', baseWsUrl);
     
-    // Check if connection already exists and is active
-    if (stompClientRef.current && stompClientRef.current.connected) {
-      console.log('✅ WebSocket already connected');
-      return;
+    // Always clear previous client before creating a new one
+    if (stompClientRef.current) {
+      try {
+        stompClientRef.current.deactivate();
+      } catch (e) {
+        console.warn('⚠️ Failed to deactivate previous client', e);
+      }
+      stompClientRef.current = null;
     }
 
     const client = new Client({
@@ -247,6 +230,18 @@ const Chat = () => {
           console.info('  Frame body:', frame.body);
           try {
             const message = JSON.parse(frame.body);
+
+            if (message?.id && seenMessageIdsRef.current.has(message.id)) {
+              console.log('⏭️ Duplicate frame ignored for message id:', message.id);
+              return;
+            }
+            if (message?.id) {
+              seenMessageIdsRef.current.add(message.id);
+              if (seenMessageIdsRef.current.size > 1000) {
+                seenMessageIdsRef.current.clear();
+              }
+            }
+
             console.log('📨 Parsed message:', message);
             console.log('  senderId:', message.senderId);
             console.log('  recipientId:', message.recipientId);
@@ -278,11 +273,8 @@ const Chat = () => {
 
             // Add to conversation if for active contact
             if (isForActive) {
-              setConversation((prev) => {
-                const updated = [...prev, message];
-                console.log('✅ Message added to conversation via WebSocket, new length:', updated.length);
-                return updated;
-              });
+              appendMessageIfMissing(message);
+              console.log('✅ Message added to conversation via WebSocket');
             } else {
               console.log('⚙️ Message received but not for active contact, updating contacts list only');
             }
@@ -357,20 +349,14 @@ const Chat = () => {
     stompClientRef.current = client;
 
     return () => {
-      // Don't deactivate on every re-render, keep connection alive
-      // Only deactivate when component fully unmounts
-    };
-  }, [currentUser]); // Only create connection when user changes, not on every re-render
-  
-  // Cleanup on component unmount
-  useEffect(() => {
-    return () => {
-      if (stompClientRef.current) {
-        console.log('🔌 Deactivating WebSocket connection on unmount');
-        stompClientRef.current.deactivate();
+      if (client) {
+        client.deactivate();
+      }
+      if (stompClientRef.current === client) {
+        stompClientRef.current = null;
       }
     };
-  }, []);
+  }, [currentUser]); // Only create connection when user changes, not on every re-render
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -412,24 +398,15 @@ const Chat = () => {
       console.log('  selectedContactId:', selectedContactId);
       console.log('  currentUser?.id:', currentUser?.id);
       
-      setConversation((prev) => {
-        console.log('📝 Inside setConversation callback');
-        console.log('  Previous conversation length:', prev.length);
-        console.log('  Message to add:', sent);
-        const updated = [...prev, sent];
-        console.log('  New conversation length:', updated.length);
-        console.log('  Updated conversation:', updated);
-        return updated;
-      });
+      appendMessageIfMissing(sent);
       
       console.log('📝 Called setConversation');
       setDraft('');
       console.log('📝 Called setDraft("")');
-      
-      // ✅ Reload conversation to ensure it's in sync with server
-      // The message has already been added to state immediately above
-      // This reload ensures we catch any server-side processing or ordering
-      await loadConversation(selectedContactId);
+
+      if (sent?.id) {
+        seenMessageIdsRef.current.add(sent.id);
+      }
       
       setContacts((prev) => {
         console.log('📝 Inside setContacts callback');
@@ -460,17 +437,10 @@ const Chat = () => {
     <div className='min-h-screen bg-slate-100'>
       <Navbar />
       <div className='max-w-5xl mx-auto p-4'>
-        <div className='mb-2 flex justify-between items-center'>
+        <div className='mb-2 text-right'>
           <span className={`px-2 py-1 rounded ${connected ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-800'}`}>
             {connected ? 'Live connected' : 'Disconnected'}
           </span>
-          <button 
-            onClick={handleRefresh}
-            className='px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600'
-            title='Reload conversations'
-          >
-            🔄 Refresh
-          </button>
         </div>
         <div className='grid grid-cols-12 gap-4'>
           <div className='col-span-4 bg-white rounded shadow p-3 h-[600px] overflow-auto'>
