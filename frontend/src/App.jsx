@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -20,12 +20,20 @@ import JobApplicants from "./recruiter/JobApplicants";
 import Chat from "./components/Chat";
 import Notifications from "./pages/Notifications";
 import AdminDashboard from './admin/AdminDashboard';
+import Footer from './components/Footer';
 
-function App() {
+function AppLayout() {
+  const location = useLocation();
+  const footerAllowedPaths = [
+    '/student/dashboard',
+    '/recruiter/dashboard',
+    '/admin/dashboard'
+  ];
+  const showFooter = footerAllowedPaths.includes(location.pathname);
+
   return (
-    <AuthProvider>
-      <Router>
-        <ToastContainer position="top-right" autoClose={3000} />
+    <div className="flex min-h-screen flex-col bg-slate-50">
+      <main className="flex-1">
         <Routes>
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
@@ -65,6 +73,18 @@ function App() {
           {/* Catch-all Redirect */}
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
+      </main>
+      {showFooter && <Footer />}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <ToastContainer position="top-right" autoClose={3000} />
+        <AppLayout />
       </Router>
     </AuthProvider>
   );
