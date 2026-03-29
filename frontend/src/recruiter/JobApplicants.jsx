@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getJobApplicants, rankCandidatesForJob, updateApplicationStatus, scheduleInterview, sendChatMessage, downloadResume } from '../api/recruiterApi';
-import Navbar from '../components/Navbar';
 import { toast } from 'react-toastify';
 import { FileText, Check, X, User, ExternalLink, MessageSquare, Calendar, Send } from 'lucide-react';
+import { DashboardShell, PageHeader, SurfaceCard, Input, PrimaryButton, EmptyState } from '../components/ui/DashboardUI';
 
 const JobApplicants = () => {
     const { jobId } = useParams();
@@ -125,33 +125,34 @@ const JobApplicants = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                    <h1 className="text-2xl font-bold text-gray-800">Applicants for Job ID: {jobId}</h1>
-                    <button onClick={loadRankedCandidates} className="px-3 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold hover:bg-indigo-700">Refresh AI Rankings</button>
-                </div>
+        <DashboardShell>
+            <PageHeader
+                badge='Recruiter Pipeline'
+                icon={User}
+                title={`Applicants for Job ID: ${jobId}`}
+                subtitle='Review candidates, shortlists, interview schedules, and direct messages from one workspace.'
+                actions={<PrimaryButton onClick={loadRankedCandidates}>Refresh AI Rankings</PrimaryButton>}
+            />
 
                 <div className="mb-4">
-                    <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-3 flex items-center justify-between gap-3">
+                    <div className="bg-slate-900/80 shadow-sm rounded-lg border border-slate-700 p-3 flex items-center justify-between gap-3">
                         <div>
-                            <div className="text-xs uppercase tracking-wider text-gray-500 font-semibold">AI candidate ranking</div>
-                            <div className="mt-1 text-slate-700 text-sm">{rankStatus === 'loading' ? 'Loading...' : rankedCandidates.length ? `${rankedCandidates.length} candidates ranked` : 'No ranking available yet.'}</div>
+                            <div className="text-xs uppercase tracking-wider text-slate-400 font-semibold">AI candidate ranking</div>
+                            <div className="mt-1 text-slate-300 text-sm">{rankStatus === 'loading' ? 'Loading...' : rankedCandidates.length ? `${rankedCandidates.length} candidates ranked` : 'No ranking available yet.'}</div>
                         </div>
-                        {rankStatus === 'error' && <span className="text-red-600 text-sm font-semibold">Unable to fetch ranking</span>}
+                        {rankStatus === 'error' && <span className="text-rose-300 text-sm font-semibold">Unable to fetch ranking</span>}
                     </div>
                 </div>
 
                 {rankedCandidates.length > 0 && (
-                    <div className="bg-white p-3 rounded-lg shadow-sm border border-indigo-100 mb-6">
-                        <div className="text-sm font-semibold text-indigo-700">Top Ranked Candidates</div>
+                    <div className="bg-slate-900/80 p-3 rounded-lg shadow-sm border border-indigo-400/30 mb-6">
+                        <div className="text-sm font-semibold text-indigo-300">Top Ranked Candidates</div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
                             {rankedCandidates.slice(0, 3).map((candidate) => (
-                                <div key={candidate.candidate_id} className="rounded-lg border border-indigo-200 px-3 py-2 bg-indigo-50">
+                                <div key={candidate.candidate_id} className="rounded-lg border border-indigo-400/30 px-3 py-2 bg-indigo-500/10">
                                     <div className="flex items-center justify-between text-sm"><span className="font-semibold">#{candidate.candidate_rank}</span><span className="font-semibold">{candidate.match_percentage}%</span></div>
-                                    <div className="text-xs text-slate-700 mt-1">{candidate.name || 'Candidate'} · ID {candidate.candidate_id}</div>
-                                    <div className="text-xs text-slate-600 mt-1"><strong>Matched:</strong> {candidate.matched_skills?.join(', ') || 'None'}</div>
+                                    <div className="text-xs text-slate-200 mt-1">{candidate.name || 'Candidate'} · ID {candidate.candidate_id}</div>
+                                    <div className="text-xs text-slate-300 mt-1"><strong>Matched:</strong> {candidate.matched_skills?.join(', ') || 'None'}</div>
                                 </div>
                             ))}
                         </div>
@@ -161,20 +162,18 @@ const JobApplicants = () => {
                 {loading ? <p>Loading...</p> : (
                     <div className="grid gap-6">
                         {applicants.length === 0 ? (
-                            <div className="bg-white p-10 text-center rounded shadow">
-                                <p className="text-gray-500">No applicants yet for this job.</p>
-                            </div>
+                            <EmptyState title='No applicants yet' description='Applicants will appear here once candidates start applying.' />
                         ) : (
                             applicants.map((app) => (
-                                <div key={app.applicationId} className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                                <SurfaceCard key={app.applicationId}>
                                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                                         
                                         {/* Applicant Info */}
                                         <div className="mb-4 md:mb-0">
-                                            <h3 className="text-xl font-bold text-gray-800 flex items-center">
-                                                <User className="w-5 h-5 mr-2 text-blue-600"/> {app.name}
+                                            <h3 className="text-xl font-bold text-slate-100 flex items-center">
+                                                <User className="w-5 h-5 mr-2 text-indigo-300"/> {app.name}
                                             </h3>
-                                            <p className="text-gray-600 text-sm">{app.email} • {app.university} ({app.degree})</p>
+                                            <p className="text-slate-400 text-sm">{app.email} • {app.university} ({app.degree})</p>
                                             
                                             <div className="mt-3 text-sm">
                                                 <p><span className="font-semibold">Skills:</span> {app.skills}</p>
@@ -186,7 +185,7 @@ const JobApplicants = () => {
                                             {app.resumeUrl && (
                                                 <button 
                                                     onClick={() => downloadResume(app.studentId)}
-                                                    className="inline-flex items-center mt-3 text-blue-600 hover:text-blue-800 hover:underline text-sm font-bold bg-blue-50 px-3 py-1.5 rounded-md transition"
+                                                    className="inline-flex items-center mt-3 text-indigo-300 hover:text-indigo-200 text-sm font-bold bg-indigo-500/10 px-3 py-1.5 rounded-md transition border border-indigo-400/30"
                                                 >
                                                     <FileText className="w-4 h-4 mr-1"/> View PDF Resume <ExternalLink className="w-3 h-3 ml-1"/>
                                                 </button>
@@ -201,46 +200,45 @@ const JobApplicants = () => {
                                             {app.status === 'APPLIED' && (
                                                 <div className="flex gap-2">
                                                     <button onClick={() => handleStatusChange(app.applicationId, 'SHORTLISTED')}
-                                                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm">
+                                                        className="ui-btn ui-btn-primary py-2 text-sm">
                                                         <Check className="w-4 h-4 mr-1"/> Shortlist
                                                     </button>
                                                     <button onClick={() => handleStatusChange(app.applicationId, 'REJECTED')}
-                                                        className="flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm">
+                                                        className="ui-btn ui-btn-danger py-2 text-sm">
                                                         <X className="w-4 h-4 mr-1"/> Reject
                                                     </button>
                                                 </div>
                                             )}
 
                                             {app.status === 'SHORTLISTED' && (
-                                                <div className="bg-gray-50 border border-gray-200 rounded p-3 w-full">
-                                                    <div className="text-sm font-semibold mb-2 text-slate-700">Schedule Interview</div>
+                                                <div className="bg-slate-950/70 border border-slate-700 rounded p-3 w-full">
+                                                    <div className="text-sm font-semibold mb-2 text-slate-200">Schedule Interview</div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                        <input type="datetime-local" value={interviewDraft[app.applicationId]?.interviewDateTime || ''} onChange={(e) => setInterviewDraft(prev => ({ ...prev, [app.applicationId]: { ...prev[app.applicationId], interviewDateTime: e.target.value } }))} className="border rounded px-2 py-1 w-full text-sm" />
-                                                        <input type="text" placeholder="Location (Online/Office)" value={interviewDraft[app.applicationId]?.interviewLocation || ''} onChange={(e) => setInterviewDraft(prev => ({ ...prev, [app.applicationId]: { ...prev[app.applicationId], interviewLocation: e.target.value } }))} className="border rounded px-2 py-1 w-full text-sm" />
+                                                        <Input type="datetime-local" value={interviewDraft[app.applicationId]?.interviewDateTime || ''} onChange={(e) => setInterviewDraft(prev => ({ ...prev, [app.applicationId]: { ...prev[app.applicationId], interviewDateTime: e.target.value } }))} className='text-sm' />
+                                                        <Input type="text" placeholder="Location (Online/Office)" value={interviewDraft[app.applicationId]?.interviewLocation || ''} onChange={(e) => setInterviewDraft(prev => ({ ...prev, [app.applicationId]: { ...prev[app.applicationId], interviewLocation: e.target.value } }))} className='text-sm' />
                                                     </div>
-                                                    <input type="text" placeholder="Meeting link (optional)" value={interviewDraft[app.applicationId]?.interviewLink || ''} onChange={(e) => setInterviewDraft(prev => ({ ...prev, [app.applicationId]: { ...prev[app.applicationId], interviewLink: e.target.value } }))} className="mt-2 border rounded px-2 py-1 w-full text-sm" />
-                                                    <button onClick={() => handleSchedule(app.applicationId)} className="mt-2 inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-xs font-semibold"><Calendar className="w-4 h-4 mr-1" /> Schedule Interview</button>
+                                                    <Input type="text" placeholder="Meeting link (optional)" value={interviewDraft[app.applicationId]?.interviewLink || ''} onChange={(e) => setInterviewDraft(prev => ({ ...prev, [app.applicationId]: { ...prev[app.applicationId], interviewLink: e.target.value } }))} className='mt-2 text-sm' />
+                                                    <button onClick={() => handleSchedule(app.applicationId)} className="mt-2 ui-btn ui-btn-primary text-xs"><Calendar className="w-4 h-4 mr-1" /> Schedule Interview</button>
                                                 </div>
                                             )}
 
                                             {app.status !== 'APPLIED' && (
                                                 <div className="mt-2 w-full">
-                                                    <div className="text-sm font-semibold mb-1 flex items-center gap-1 text-slate-700"><MessageSquare className="w-4 h-4"/> Message Student</div>
+                                                    <div className="text-sm font-semibold mb-1 flex items-center gap-1 text-slate-200"><MessageSquare className="w-4 h-4"/> Message Student</div>
                                                     <div className="flex gap-2">
-                                                        <input type="text" placeholder="Write message..." value={chatDraft[app.applicationId] || ''} onChange={(e) => setChatDraft(prev => ({ ...prev, [app.applicationId]: e.target.value }))} className="border rounded px-2 py-1 w-full text-sm" />
-                                                        <button onClick={(e) => handleSendMessage(e, app.applicationId, app.studentUserId)} className="inline-flex items-center px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 whitespace-nowrap"><Send className="w-4 h-4"/></button>
+                                                        <Input type="text" placeholder="Write message..." value={chatDraft[app.applicationId] || ''} onChange={(e) => setChatDraft(prev => ({ ...prev, [app.applicationId]: e.target.value }))} className='text-sm' />
+                                                        <button onClick={(e) => handleSendMessage(e, app.applicationId, app.studentUserId)} className="ui-btn ui-btn-secondary whitespace-nowrap"><Send className="w-4 h-4"/></button>
                                                     </div>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
-                                </div>
+                                </SurfaceCard>
                             ))
                         )}
                     </div>
                 )}
-            </div>
-        </div>
+        </DashboardShell>
     );
 };
 

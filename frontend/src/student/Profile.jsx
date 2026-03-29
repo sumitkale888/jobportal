@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { getStudentProfile, updateStudentProfile } from "../api/studentApi";
-import Navbar from "../components/Navbar";
 import { toast } from "react-toastify";
 import { User, FileText, Code, BookOpen, Award } from "lucide-react";
+import { DashboardShell, PageHeader, SurfaceCard, Input, TextArea, PrimaryButton } from "../components/ui/DashboardUI";
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
@@ -72,103 +72,90 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="flex items-center mb-8 border-b pb-4">
-            <User className="w-8 h-8 text-blue-600 mr-3" />
-            <h1 className="text-3xl font-bold text-gray-800">
-              Student Profile
-            </h1>
-          </div>
+    <DashboardShell contentClassName='mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8'>
+        <PageHeader badge='Student Profile' icon={User} title='Student Profile' subtitle='Build a high-signal profile that improves matching and recruiter response rates.' />
+        <SurfaceCard>
 
           {loading ? (
-            <p>Loading...</p>
+            <p className='text-slate-400'>Loading...</p>
           ) : (
             <form onSubmit={handleSubmit}>
               {/* Personal Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="ui-label">
                     Full Name
                   </label>
-                  <input
+                  <Input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full p-3 bg-white border rounded-lg"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="ui-label">
                     Email
                   </label>
-                  <input
+                  <Input
                     type="text"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full p-3 bg-white border rounded-lg"
                   />
                 </div>
               </div>
 
               {/* Education Section */}
-              <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center">
                 <BookOpen className="w-5 h-5 mr-2" /> Education
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="ui-label">
                     University / College
                   </label>
-                  <input
+                  <Input
                     type="text"
                     name="university"
                     value={formData.university}
                     onChange={handleChange}
-                    className="w-full p-3 border rounded-lg"
                     placeholder="MIT, IIT, etc."
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="ui-label">
                     Degree
                   </label>
-                  <input
+                  <Input
                     type="text"
                     name="degree"
                     value={formData.degree}
                     onChange={handleChange}
-                    className="w-full p-3 border rounded-lg"
                     placeholder="B.Tech, MBA"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="ui-label">
                     Graduation Year
                   </label>
-                  <input
+                  <Input
                     type="text"
                     name="graduationYear"
                     value={formData.graduationYear}
                     onChange={handleChange}
-                    className="w-full p-3 border rounded-lg"
                     placeholder="2024"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="ui-label">
                     CGPA / Percentage
                   </label>
-                  <input
+                  <Input
                     type="number"
                     name="cgpa"
                     value={formData.cgpa}
                     onChange={handleChange}
-                    className="w-full p-3 border rounded-lg"
                     placeholder="9.5"
                     step="0.01"
                   />
@@ -176,67 +163,64 @@ const Profile = () => {
               </div>
 
               {/* Skills & Experience */}
-              <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+              <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center">
                 <Award className="w-5 h-5 mr-2" /> Skills & Experience
               </h3>
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="ui-label">
                   <Code className="inline w-4 h-4 mr-1" /> Skills (comma
                   separated)
                 </label>
-                <textarea
+                <TextArea
                   name="skills"
                   value={formData.skills}
                   onChange={handleChange}
-                  className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="Java, React, Spring Boot..."
                   required
                 />
               </div>
 
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="ui-label">
                   Experience / Projects
                 </label>
-                <textarea
+                <TextArea
                   name="experience"
                   value={formData.experience}
                   onChange={handleChange}
-                  className="w-full p-3 border rounded-lg"
                   placeholder="Briefly describe your internships or projects..."
                 />
               </div>
 
               {/* ✅ UPDATED: Resume File Upload */}
               <div className="mb-8">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="ui-label">
                   <FileText className="inline w-4 h-4 mr-1" /> Upload Resume (PDF)
                 </label>
                 <input
                   type="file"
                   accept="application/pdf"
                   onChange={(e) => setFile(e.target.files[0])}
-                  className="w-full p-2 border rounded-lg bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  className="ui-input p-2"
                 />
                 {/* Show current file name if it exists in DB */}
                 {formData.resumeUrl && !file && (
-                  <p className="mt-2 text-sm text-green-600 font-medium">
+                  <p className="mt-2 text-sm text-emerald-300 font-medium">
                     Current file on record: {formData.resumeUrl}
                   </p>
                 )}
               </div>
 
-              <button
+              <PrimaryButton
                 type="submit"
-                className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition"
+                className='w-full'
               >
                 Save Profile
-              </button>
+              </PrimaryButton>
             </form>
           )}
-        </div>
-      </div>
-    </div>
+        </SurfaceCard>
+    </DashboardShell>
   );
 };
 

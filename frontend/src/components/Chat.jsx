@@ -434,46 +434,46 @@ const Chat = () => {
   };
 
   return (
-    <div className='min-h-screen bg-slate-100'>
+    <div className='min-h-screen bg-[#0b1220] text-slate-200'>
       <Navbar />
-      <div className='max-w-5xl mx-auto p-4'>
+      <div className='mx-auto max-w-6xl p-4 sm:p-6 lg:p-8'>
         <div className='mb-2 text-right'>
-          <span className={`px-2 py-1 rounded ${connected ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-800'}`}>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${connected ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'bg-slate-700 text-slate-300 border border-slate-600'}`}>
             {connected ? 'Live connected' : 'Disconnected'}
           </span>
         </div>
         <div className='grid grid-cols-12 gap-4'>
-          <div className='col-span-4 bg-white rounded shadow p-3 h-[600px] overflow-auto'>
-            <h2 className='font-semibold text-lg mb-2'>Contacts</h2>
-            {contacts.length === 0 && <p className='text-gray-500'>No conversations yet.</p>}
+          <div className='col-span-12 lg:col-span-4 rounded-2xl border border-slate-700 bg-slate-900/80 p-3 shadow-[0_18px_45px_rgba(2,6,23,0.4)] h-[600px] overflow-auto'>
+            <h2 className='mb-2 text-lg font-semibold text-slate-100'>Contacts</h2>
+            {contacts.length === 0 && <p className='text-slate-400'>No conversations yet.</p>}
             {contacts.map((c) => (
               <button
                 key={c.id}
-                className={`w-full text-left border rounded p-2 mb-2 ${selectedContactId === c.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                className={`mb-2 w-full rounded-xl border p-3 text-left transition ${selectedContactId === c.id ? 'border-indigo-400/40 bg-indigo-500/10' : 'border-slate-700 bg-slate-900 hover:bg-slate-800'}`}
                 onClick={() => loadConversation(c.id)}
               >
                 <div className='flex items-center justify-between'>
                   <span className='font-medium'>{c.email}</span>
                   {c.unread && <span className='h-2 w-2 rounded-full bg-red-500 inline-block' />}
                 </div>
-                <div className='text-xs text-gray-500'>{c.lastMessage}</div>
+                <div className='text-xs text-slate-400'>{c.lastMessage}</div>
               </button>
             ))}
           </div>
-          <div className='col-span-8 bg-white rounded shadow p-3 h-[600px] flex flex-col'>
+          <div className='col-span-12 lg:col-span-8 rounded-2xl border border-slate-700 bg-slate-900/80 p-3 shadow-[0_18px_45px_rgba(2,6,23,0.4)] h-[600px] flex flex-col'>
             <div className='mb-2'>
-              <h2 className='font-semibold text-lg'>Conversation</h2>
+              <h2 className='font-semibold text-lg text-slate-100'>Conversation</h2>
               {selectedContactId ? (
-                <p className='text-sm text-gray-500'>
+                <p className='text-sm text-slate-400'>
                   Chat with {contacts.find((c) => c.id === selectedContactId)?.email || 'Unknown Contact'}
                 </p>
               ) : (
-                <p className='text-sm text-gray-500'>Select a contact to chat.</p>
+                <p className='text-sm text-slate-400'>Select a contact to chat.</p>
               )}
             </div>
-            <div ref={messagesContainerRef} className='flex-1 border rounded p-2 overflow-auto bg-slate-50'>
+            <div ref={messagesContainerRef} className='flex-1 border border-slate-700 rounded-xl p-2 overflow-auto bg-slate-950/70'>
               {conversation.length === 0 ? (
-                <div className='text-gray-500 p-4'>No messages yet.</div>
+                <div className='text-slate-400 p-4'>No messages yet.</div>
               ) : (
                 conversation.map((m, idx) => {
                   if (!m) {
@@ -496,7 +496,7 @@ const Chat = () => {
                   const isMine = currentUser && m.senderId === currentUser.id;
                   return (
                     <div key={`${m.id}-${m.sentAt}`} className={`mb-2 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`rounded px-3 py-2 max-w-[80%] ${isMine ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-900'}`}>
+                      <div className={`rounded-xl px-3 py-2 max-w-[80%] ${isMine ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white' : 'bg-slate-700 text-slate-100 border border-slate-600'}`}>
                         <div>{m.content}</div>
                         <div className='text-xs text-right mt-1 opacity-70'>{new Date(m.sentAt).toLocaleTimeString()}</div>
                       </div>
@@ -506,8 +506,8 @@ const Chat = () => {
               )}
             </div>
             <form onSubmit={handleSend} className='mt-3 flex gap-2'>
-              <input type='text' placeholder='Type a message...' className='flex-1 border rounded px-3 py-2 focus:outline-none' value={draft} onChange={(e) => setDraft(e.target.value)} />
-              <button className='bg-blue-600 text-white px-4 rounded' type='submit'>Send</button>
+              <input type='text' placeholder='Type a message...' className='flex-1 ui-input' value={draft} onChange={(e) => setDraft(e.target.value)} />
+              <button className='ui-btn ui-btn-primary px-5' type='submit'>Send</button>
             </form>
           </div>
         </div>

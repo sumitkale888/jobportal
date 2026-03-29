@@ -33,29 +33,29 @@ const AdminJobs = () => {
     }
   };
 
-  if (loading) return <div className="py-8 text-center">Loading jobs...</div>;
+  if (loading) return <div className="py-8 text-center text-slate-400">Loading jobs...</div>;
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm mt-4">
+    <div className="mt-4">
       <div className="flex items-center justify-between mb-3">
-        <div className="text-lg font-semibold">Job Management</div>
-        <button onClick={() => setIsReported(!isReported)} className="px-3 py-1 bg-indigo-600 text-white rounded">{isReported ? "All Jobs" : "Reported Jobs"}</button>
+        <div className="text-lg font-semibold text-slate-100">Job Management</div>
+        <button onClick={() => setIsReported(!isReported)} className="ui-btn ui-btn-primary py-1.5">{isReported ? "All Jobs" : "Reported Jobs"}</button>
       </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-200">
-          <thead className="bg-gray-50"><tr><th className="p-2">Job</th><th className="p-2">Company</th><th className="p-2">Status</th><th className="p-2">Reports</th><th className="p-2">Actions</th></tr></thead>
+      <div className="ui-table-wrap">
+        <table className="ui-table">
+          <thead><tr><th className="p-2">Job</th><th className="p-2">Company</th><th className="p-2">Status</th><th className="p-2">Reports</th><th className="p-2">Actions</th></tr></thead>
           <tbody>
             {jobs.map((j) => (
-              <tr key={j.id} className="border-t">
-                <td className="p-2"><div className="font-semibold">{j.title}</div><div className="text-xs text-gray-500">{j.description?.slice(0, 80)}...</div></td>
+              <tr key={j.id}>
+                <td className="p-2"><div className="font-semibold text-slate-100">{j.title}</div><div className="text-xs text-slate-400">{j.description?.slice(0, 80)}...</div></td>
                 <td className="p-2">{j.companyName}</td>
                 <td className="p-2">{j.status}</td>
                 <td className="p-2">{j.reportCount}</td>
                 <td className="p-2 flex flex-wrap gap-1">
-                  <button onClick={() => doAction(j.id, "approve")} className="bg-green-500 text-white px-2 py-1 rounded">Approve</button>
-                  <button onClick={() => doAction(j.id, "reject")} className="bg-yellow-500 text-white px-2 py-1 rounded">Reject</button>
-                  <button onClick={() => doAction(j.id, "remove")} className="bg-orange-500 text-white px-2 py-1 rounded">Remove Desc</button>
-                  <button onClick={() => doAction(j.id, "delete")} className="bg-red-500 text-white px-2 py-1 rounded">Delete</button>
+                  <button onClick={() => doAction(j.id, "approve")} className="ui-btn ui-btn-primary py-1.5">Approve</button>
+                  <button onClick={() => doAction(j.id, "reject")} className="ui-btn ui-btn-secondary py-1.5">Reject</button>
+                  <button onClick={() => doAction(j.id, "remove")} className="ui-btn ui-btn-secondary py-1.5">Remove Desc</button>
+                  <button onClick={() => doAction(j.id, "delete")} className="ui-btn ui-btn-danger py-1.5">Delete</button>
                 </td>
               </tr>
             ))}

@@ -62,14 +62,14 @@ const AdminUsers = () => {
     }
   };
 
-  if (loading) return <div className="py-8 text-center">Loading users...</div>;
+  if (loading) return <div className="py-8 text-center text-slate-400">Loading users...</div>;
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm mt-4">
-      <div className="text-lg font-semibold mb-3">User Management</div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full border border-gray-200">
-          <thead className="bg-gray-50">
+    <div className="mt-4">
+      <div className="mb-3 text-lg font-semibold text-slate-100">User Management</div>
+      <div className="ui-table-wrap">
+        <table className="ui-table">
+          <thead>
             <tr>
               <th className="p-2 text-left">Name</th>
               <th className="p-2 text-left">Email</th>
@@ -80,20 +80,20 @@ const AdminUsers = () => {
           </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id} className="border-t">
+              <tr key={u.id}>
                 <td className="p-2">{u.name}</td>
                 <td className="p-2">{u.email}</td>
                 <td className="p-2">
-                  <select value={u.role} onChange={(e) => changeRole(u, e.target.value)} className="border rounded p-1">
+                  <select value={u.role} onChange={(e) => changeRole(u, e.target.value)} className="ui-input py-1.5">
                     <option value="STUDENT">STUDENT</option>
                     <option value="RECRUITER">RECRUITER</option>
                     <option value="ADMIN">ADMIN</option>
                   </select>
                 </td>
                 <td className="p-2">{u.banned ? "Yes" : "No"}</td>
-                <td className="p-2 space-x-1">
-                  <button className="px-2 py-1 bg-orange-500 text-white rounded" onClick={() => toggleBan(u)}>{u.banned ? "Unban" : "Ban"}</button>
-                  <button disabled={currentUser?.email === u.email} className="px-2 py-1 bg-red-600 text-white rounded disabled:opacity-50" onClick={() => remove(u)}>{currentUser?.email === u.email ? "Cannot Delete" : "Delete"}</button>
+                <td className="p-2 flex flex-wrap gap-2">
+                  <button className="ui-btn ui-btn-secondary py-1.5" onClick={() => toggleBan(u)}>{u.banned ? "Unban" : "Ban"}</button>
+                  <button disabled={currentUser?.email === u.email} className="ui-btn ui-btn-danger py-1.5 disabled:opacity-50" onClick={() => remove(u)}>{currentUser?.email === u.email ? "Cannot Delete" : "Delete"}</button>
                 </td>
               </tr>
             ))}

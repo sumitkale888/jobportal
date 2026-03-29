@@ -31,16 +31,16 @@ const AdminSettings = () => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm mt-4 space-y-4">
+    <div className="mt-4 space-y-4">
       <div>
-        <div className="text-lg font-semibold">Manage Categories</div>
+        <div className="text-lg font-semibold text-slate-100">Manage Categories</div>
         <div className="mt-2 flex gap-2">
-          <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="border p-2 rounded" placeholder="New category" />
-          <button onClick={addCat} className="px-3 py-2 bg-blue-600 text-white rounded">Add</button>
+          <input value={newCategory} onChange={(e) => setNewCategory(e.target.value)} className="ui-input" placeholder="New category" />
+          <button onClick={addCat} className="ui-btn ui-btn-primary">Add</button>
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
           {categories.map((c) => (
-            <span key={c} className="bg-gray-100 border px-2 py-1 rounded flex items-center gap-1">
+            <span key={c} className="ui-tag flex items-center gap-1">
               {c} <button className="text-red-600" onClick={async () => { await deleteCategory(c); load(); }}>×</button>
             </span>
           ))}
@@ -48,17 +48,17 @@ const AdminSettings = () => {
       </div>
 
       <div>
-        <div className="text-lg font-semibold mb-2">Job Types</div>
-        <div className="flex flex-wrap gap-2">{jobTypes.map((t) => (<span key={t} className="bg-green-50 border border-green-300 px-2 py-1 rounded">{t}</span>))}</div>
+        <div className="text-lg font-semibold mb-2 text-slate-100">Job Types</div>
+        <div className="flex flex-wrap gap-2">{jobTypes.map((t) => (<span key={t} className="ui-tag">{t}</span>))}</div>
       </div>
 
       <div>
-        <div className="text-lg font-semibold mb-2">Feature Toggles</div>
+        <div className="text-lg font-semibold mb-2 text-slate-100">Feature Toggles</div>
         <div className="space-y-2">
           {Object.entries(toggles).map(([name, enabled]) => (
-            <div key={name} className="flex items-center justify-between border p-2 rounded">
-              <div className="font-medium">{name}</div>
-              <button onClick={async () => { await toggleFeature(name, !enabled); load(); }} className={`px-2 py-1 rounded ${enabled ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-700'}`}>
+            <div key={name} className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-900/80 p-3">
+              <div className="font-medium text-slate-200">{name}</div>
+              <button onClick={async () => { await toggleFeature(name, !enabled); load(); }} className={`ui-btn py-1.5 ${enabled ? 'ui-btn-primary' : 'ui-btn-secondary'}`}>
                 {enabled ? 'Enabled' : 'Disabled'}
               </button>
             </div>
@@ -66,12 +66,12 @@ const AdminSettings = () => {
         </div>
       </div>
 
-      <div className="flex items-center justify-between border p-2 rounded">
+      <div className="flex items-center justify-between rounded-xl border border-slate-700 bg-slate-900/80 p-3">
         <div>
-          <div className="text-lg font-semibold">Maintenance Mode</div>
-          <div className="text-sm text-gray-500">When enabled, platform features can be restricted in the backend.</div>
+          <div className="text-lg font-semibold text-slate-100">Maintenance Mode</div>
+          <div className="text-sm text-slate-400">When enabled, platform features can be restricted in the backend.</div>
         </div>
-        <button onClick={async () => { await setMaintenanceMode(!maintenance); setMaintenance(!maintenance); }} className={`px-3 py-2 rounded ${maintenance ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+        <button onClick={async () => { await setMaintenanceMode(!maintenance); setMaintenance(!maintenance); }} className={`ui-btn ${maintenance ? 'ui-btn-danger' : 'ui-btn-primary'}`}>
           {maintenance ? 'Disable' : 'Enable'}
         </button>
       </div>

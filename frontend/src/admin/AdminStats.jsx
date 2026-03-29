@@ -38,9 +38,9 @@ const AdminStats = () => {
         ["Applications", stats.totalApplications],
         ["Active Companies", stats.activeCompanies],
       ].map(([label, value]) => (
-        <div key={label} className="bg-white border p-4 rounded-lg shadow-sm">
-          <div className="text-xs uppercase text-gray-500">{label}</div>
-          <div className="text-3xl font-bold text-blue-700">{value}</div>
+        <div key={label} className="ui-kpi">
+          <div className="ui-kpi-label">{label}</div>
+          <div className="ui-kpi-value text-indigo-300">{value}</div>
         </div>
       ))}
     </div>

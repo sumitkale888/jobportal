@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { getMyApplications, withdrawApplication } from '../api/applicationApi';
-import Navbar from '../components/Navbar';
 import { toast } from 'react-toastify';
 import { Building, MapPin, Calendar, Trash2 } from 'lucide-react';
+import { DashboardShell, PageHeader, SurfaceCard, EmptyState } from '../components/ui/DashboardUI';
 
 const Applications = () => {
     const [applications, setApplications] = useState([]);
@@ -39,36 +39,36 @@ const Applications = () => {
 
     const getStatusColor = (status) => {
         switch (status) {
-            case 'APPLIED': return 'bg-blue-100 text-blue-800 border-blue-200';
-            case 'SHORTLISTED': return 'bg-green-100 text-green-800 border-green-200';
-            case 'REJECTED': return 'bg-red-100 text-red-800 border-red-200';
-            default: return 'bg-gray-100 text-gray-800 border-gray-200';
+            case 'APPLIED': return 'bg-indigo-500/15 text-indigo-300 border-indigo-400/40';
+            case 'SHORTLISTED': return 'bg-emerald-500/15 text-emerald-300 border-emerald-400/40';
+            case 'REJECTED': return 'bg-rose-500/15 text-rose-300 border-rose-400/40';
+            default: return 'bg-slate-700/70 text-slate-300 border-slate-600';
         }
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <Navbar />
-            <div className="max-w-5xl mx-auto px-4 py-10">
-                <h1 className="text-3xl font-bold text-gray-800 mb-8">My Applications</h1>
+        <DashboardShell>
+            <PageHeader
+                badge="Application Tracker"
+                title="My Job Applications"
+                subtitle="Monitor progress, review status changes, and manage active submissions."
+            />
                 
                 {loading ? (
-                    <p className="text-center text-gray-500">Loading...</p>
+                    <p className="text-center text-slate-400">Loading...</p>
                 ) : (
                     <div className="grid gap-6">
                         {applications.length === 0 ? (
-                            <div className="text-center py-10 bg-white rounded-lg shadow">
-                                <p className="text-gray-500">You haven't applied to any jobs yet.</p>
-                            </div>
+                            <EmptyState title="No applications yet" description="Apply to roles from the dashboard and your activity will appear here." />
                         ) : (
                             applications.map((app) => (
-                                <div key={app.applicationId} className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-start md:items-center hover:shadow-md transition">
+                                <SurfaceCard key={app.applicationId} className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                                     <div className="mb-4 md:mb-0">
-                                        <h3 className="text-xl font-bold text-gray-800">{app.jobTitle}</h3>
-                                        <div className="flex flex-col sm:flex-row sm:items-center text-gray-600 mt-2 space-y-1 sm:space-y-0 sm:space-x-4 text-sm">
-                                            <span className="flex items-center"><Building className="w-4 h-4 mr-1.5 text-gray-400"/> {app.companyName}</span>
-                                            <span className="hidden sm:inline text-gray-300">|</span>
-                                            <span className="flex items-center"><Calendar className="w-4 h-4 mr-1.5 text-gray-400"/> Applied: {new Date(app.appliedAt).toLocaleDateString()}</span>
+                                        <h3 className="text-xl font-bold text-slate-100">{app.jobTitle}</h3>
+                                        <div className="mt-2 flex flex-col space-y-1 text-sm text-slate-400 sm:flex-row sm:items-center sm:space-x-4 sm:space-y-0">
+                                            <span className="flex items-center"><Building className="w-4 h-4 mr-1.5 text-slate-500"/> {app.companyName}</span>
+                                            <span className="hidden sm:inline text-slate-700">|</span>
+                                            <span className="flex items-center"><Calendar className="w-4 h-4 mr-1.5 text-slate-500"/> Applied: {new Date(app.appliedAt).toLocaleDateString()}</span>
                                         </div>
                                     </div>
                                     
@@ -83,20 +83,19 @@ const Applications = () => {
                                         {(app.status === 'APPLIED' || app.status === 'REJECTED') && (
                                             <button 
                                                 onClick={() => handleWithdraw(app.applicationId)}
-                                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition"
+                                                className="p-2 rounded-full text-rose-300 hover:bg-rose-500/15 hover:text-rose-200 transition"
                                                 title={app.status === 'REJECTED' ? "Delete History" : "Withdraw Application"}
                                             >
                                                 <Trash2 className="w-5 h-5" />
                                             </button>
                                         )}
                                     </div>
-                                </div>
+                                </SurfaceCard>
                             ))
                         )}
                     </div>
                 )}
-            </div>
-        </div>
+        </DashboardShell>
     );
 };
 

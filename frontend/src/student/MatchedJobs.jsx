@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from '../components/Navbar';
 import { Link } from 'react-router-dom';
 import { Briefcase, MapPin, Sparkles, CheckCircle2, XCircle, BrainCircuit, X } from 'lucide-react';
 import { getAiRecommendedJobs, getStudentProfile, getAllJobs } from '../api/studentApi';
+import { DashboardShell, PageHeader, SurfaceCard, PrimaryButton, SecondaryButton, EmptyState } from '../components/ui/DashboardUI';
 
 const MatchedJobs = () => {
     const [matches, setMatches] = useState([]);
@@ -41,19 +41,18 @@ const MatchedJobs = () => {
     }, []);
 
     const getScoreColor = (score) => {
-        if (score >= 70) return "text-green-700 bg-green-100 border-green-200";
-        if (score >= 30) return "text-orange-700 bg-orange-100 border-orange-200";
-        return "text-red-700 bg-red-100 border-red-200";
+        if (score >= 70) return "text-emerald-300 bg-emerald-500/15 border-emerald-400/40";
+        if (score >= 30) return "text-amber-300 bg-amber-500/15 border-amber-400/40";
+        return "text-rose-300 bg-rose-500/15 border-rose-400/40";
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <Navbar />
+        <DashboardShell>
             
             {/* 🚨 AI INSIGHTS MODAL 🚨 */}
             {selectedInsight && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 flex justify-between items-start text-white">
                             <div>
                                 <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -67,8 +66,8 @@ const MatchedJobs = () => {
                         </div>
                         
                         <div className="p-6 space-y-6">
-                            <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl border border-gray-100">
-                                <span className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">Overall Compatibility</span>
+                            <div className="flex flex-col items-center justify-center p-4 bg-slate-800 rounded-xl border border-slate-700">
+                                <span className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Overall Compatibility</span>
                                 <span className={`text-4xl font-black ${getScoreColor(selectedInsight.match_score).split(' ')[0]}`}>
                                     {selectedInsight.match_score}%
                                 </span>
@@ -76,31 +75,31 @@ const MatchedJobs = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 {/* Matched Skills Box */}
-                                <div className="bg-green-50/50 border border-green-100 p-4 rounded-xl">
-                                    <h3 className="font-bold text-green-800 flex items-center gap-1.5 mb-3 text-sm">
+                                <div className="bg-emerald-500/10 border border-emerald-400/30 p-4 rounded-xl">
+                                    <h3 className="font-bold text-emerald-300 flex items-center gap-1.5 mb-3 text-sm">
                                         <CheckCircle2 className="w-4 h-4"/> Found in Resume
                                     </h3>
                                     <div className="flex flex-wrap gap-1.5">
                                         {selectedInsight.matched_skills.length > 0 ? selectedInsight.matched_skills.map((s, i) => (
-                                            <span key={i} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-md font-semibold border border-green-200">{s}</span>
-                                        )) : <span className="text-xs text-green-600/60 italic">No exact matches</span>}
+                                            <span key={i} className="text-xs bg-emerald-500/20 text-emerald-200 px-2 py-1 rounded-md font-semibold border border-emerald-400/30">{s}</span>
+                                        )) : <span className="text-xs text-emerald-200/60 italic">No exact matches</span>}
                                     </div>
                                 </div>
 
                                 {/* Missing Skills Box */}
-                                <div className="bg-red-50/50 border border-red-100 p-4 rounded-xl">
-                                    <h3 className="font-bold text-red-800 flex items-center gap-1.5 mb-3 text-sm">
+                                <div className="bg-rose-500/10 border border-rose-400/30 p-4 rounded-xl">
+                                    <h3 className="font-bold text-rose-300 flex items-center gap-1.5 mb-3 text-sm">
                                         <XCircle className="w-4 h-4"/> Missing/To Learn
                                     </h3>
                                     <div className="flex flex-wrap gap-1.5">
                                         {selectedInsight.missing_skills.length > 0 ? selectedInsight.missing_skills.map((s, i) => (
-                                            <span key={i} className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-md font-semibold border border-red-200">{s}</span>
-                                        )) : <span className="text-xs text-red-600/60 italic">None missing!</span>}
+                                            <span key={i} className="text-xs bg-rose-500/20 text-rose-200 px-2 py-1 rounded-md font-semibold border border-rose-400/30">{s}</span>
+                                        )) : <span className="text-xs text-rose-200/60 italic">None missing!</span>}
                                     </div>
                                 </div>
                             </div>
 
-                            <button onClick={() => setSelectedInsight(null)} className="w-full bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition">
+                            <button onClick={() => setSelectedInsight(null)} className="ui-btn ui-btn-secondary w-full py-3">
                                 Close Dashboard
                             </button>
                         </div>
@@ -109,26 +108,20 @@ const MatchedJobs = () => {
             )}
 
             {/* JOB LISTINGS GRID */}
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <div className="flex items-center mb-8 pb-4 border-b border-gray-200">
-                    <Sparkles className="w-8 h-8 text-purple-600 mr-3" />
-                    <h1 className="text-3xl font-bold text-gray-800">AI Recommended Jobs</h1>
-                </div>
+            <PageHeader badge='AI Matching' icon={Sparkles} title='AI Recommended Jobs' subtitle='Ranked opportunities based on your profile and skill similarity.' />
                 
                 {loading ? (
                     <div className="text-center py-20">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                        <p className="text-gray-500 font-medium">Scanning your PDF resume with AI...</p>
+                        <p className="text-slate-400 font-medium">Scanning your resume with AI...</p>
                     </div>
                 ) : (
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {matches.length === 0 ? (
-                            <div className="col-span-3 text-center py-10 bg-white rounded-xl shadow-sm border border-gray-100">
-                                <p className="text-gray-500 text-lg font-medium">No strong matches found yet.</p>
-                            </div>
+                            <div className='col-span-3'><EmptyState title='No strong matches yet' description='Complete your profile and add more skills to improve AI recommendations.' /></div>
                         ) : (
                             matches.map((job) => (
-                                <div key={job.id} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-lg transition border border-gray-100 relative group flex flex-col justify-between">
+                                <SurfaceCard key={job.id} className="relative group flex flex-col justify-between transition hover:-translate-y-1 hover:border-indigo-400/40 hover:shadow-[0_24px_55px_rgba(99,102,241,0.22)]">
                                     
                                     <div>
                                         {/* Clickable AI Badge */}
@@ -142,46 +135,45 @@ const MatchedJobs = () => {
 
                                         <div className="flex items-center gap-3 mb-4 mt-2">
                                             {job.companyLogo ? (
-                                                <img src={`data:${job.logoContentType};base64,${job.companyLogo}`} alt={job.companyName} className="w-12 h-12 rounded-lg object-contain border border-gray-200" />
+                                                <img src={`data:${job.logoContentType};base64,${job.companyLogo}`} alt={job.companyName} className="w-12 h-12 rounded-lg object-contain border border-slate-700" />
                                             ) : (
-                                                <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                                <div className="w-12 h-12 rounded-lg bg-indigo-500/15 flex items-center justify-center text-indigo-300">
                                                     <Briefcase className="w-6 h-6" />
                                                 </div>
                                             )}
                                             <div>
-                                                <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{job.title}</h3>
-                                                <p className="text-sm text-gray-500 font-medium">{job.companyName}</p>
+                                                <h3 className="text-lg font-bold text-slate-100 line-clamp-1">{job.title}</h3>
+                                                <p className="text-sm text-slate-400 font-medium">{job.companyName}</p>
                                             </div>
                                         </div>
 
                                         <div className="mb-6 space-y-2">
-                                            <p className="text-sm text-gray-600 flex items-center">
-                                                <MapPin className="w-4 h-4 mr-2 text-gray-400" /> {job.location}
+                                            <p className="text-sm text-slate-400 flex items-center">
+                                                <MapPin className="w-4 h-4 mr-2 text-slate-500" /> {job.location}
                                             </p>
                                         </div>
                                     </div>
 
                                     <div className="flex gap-2 mt-4">
-                                        <button 
+                                        <SecondaryButton 
                                             onClick={() => setSelectedInsight(job)}
-                                            className="flex-1 bg-purple-50 text-purple-700 py-2 rounded-lg hover:bg-purple-100 transition font-bold text-sm border border-purple-200"
+                                            className="flex-1"
                                         >
                                             View AI Match
-                                        </button>
+                                        </SecondaryButton>
                                         <Link 
                                             to={`/student/jobs/${job.id}`} 
-                                            className="flex-1 text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-bold text-sm shadow-md shadow-blue-200"
+                                            className="ui-btn ui-btn-primary flex-1"
                                         >
                                             Apply Job
                                         </Link>
                                     </div>
-                                </div>
+                                </SurfaceCard>
                             ))
                         )}
                     </div>
                 )}
-            </div>
-        </div>
+        </DashboardShell>
     );
 };
 
