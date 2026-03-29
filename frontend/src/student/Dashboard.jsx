@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Briefcase, ChevronRight, Clock3, Filter, MapPin, Search, Sparkles, Wallet } from 'lucide-react';
 import { getAllJobs, searchJobs } from '../api/studentApi';
+import heroImage from '../assets/job1.png';
 import {
   DashboardShell,
   PageHeader,
@@ -104,6 +105,47 @@ const StudentDashboard = () => {
           </Link>
         }
       />
+
+      <section className='ui-fade-up grid gap-8 overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40 p-6 md:grid-cols-2 md:p-8'>
+        <div className='flex flex-col justify-center'>
+          <p className='ui-badge mb-4'>#1 Platform For Jobs</p>
+          <h2 className='text-4xl font-black leading-tight text-slate-100 md:text-5xl'>
+            Find Your <span className='bg-gradient-to-r from-indigo-300 to-violet-300 bg-clip-text text-transparent'>Next Chapter</span>
+          </h2>
+          <p className='mt-4 max-w-xl text-base leading-relaxed text-slate-300 md:text-lg'>
+            Search and find your dream role faster with smart filters, role insights, and AI-powered matching.
+          </p>
+          <div className='mt-6 flex flex-wrap gap-3'>
+            <Link to='/student/matches' className='ui-btn ui-btn-primary'>
+              <Sparkles className='h-4 w-4' /> View AI Matches
+            </Link>
+            <button type='button' onClick={() => setShowFilters(true)} className='ui-btn ui-btn-secondary'>
+              <Filter className='h-4 w-4' /> Open Filters
+            </button>
+          </div>
+        </div>
+
+        <div className='relative flex min-h-[320px] items-center justify-center md:min-h-[380px]'>
+          <div className='absolute h-[280px] w-[280px] rounded-full bg-gradient-to-br from-indigo-400/30 to-violet-400/20 blur-2xl md:h-[340px] md:w-[340px]' />
+          <div className='absolute h-[260px] w-[260px] rounded-full border border-indigo-300/30 bg-indigo-500/10 md:h-[320px] md:w-[320px]' />
+
+          <img
+            src={heroImage}
+            alt='Job seeker'
+            className='relative z-10 h-[320px] w-auto object-contain drop-shadow-[0_20px_40px_rgba(2,6,23,0.6)] md:h-[380px]'
+          />
+
+          <div className='absolute left-2 top-5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 py-2 text-xs text-slate-200 shadow-xl md:left-6'>
+            <p className='font-bold'>Hiring Developer</p>
+            <p className='text-slate-400'>Tech Corp • Full-time</p>
+          </div>
+
+          <div className='absolute bottom-5 right-1 rounded-xl border border-indigo-400/30 bg-indigo-500/10 px-3 py-2 text-xs text-indigo-200 shadow-xl md:right-4'>
+            <p className='font-bold'>UI/UX Designer</p>
+            <p className='text-indigo-100/80'>40 Vacancies</p>
+          </div>
+        </div>
+      </section>
 
       <section className='grid gap-4 md:grid-cols-3 ui-fade-up'>
         <SurfaceCard className='ui-kpi'>
