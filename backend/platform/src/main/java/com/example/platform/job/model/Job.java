@@ -4,6 +4,7 @@ import com.example.platform.auth.model.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -46,4 +47,6 @@ public class Job {
 
     @CreationTimestamp
     private LocalDateTime postedAt;
+
+    private LocalDate expiresAt;
 }

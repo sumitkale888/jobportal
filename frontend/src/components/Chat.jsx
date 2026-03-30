@@ -97,6 +97,7 @@ const Chat = () => {
   const markMessagesAsReadOnBackend = async (senderId) => {
     try {
       await axiosInstance.post('/chat/mark-as-read', { senderId });
+      window.dispatchEvent(new Event('chat:updated'));
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
@@ -281,7 +282,9 @@ const Chat = () => {
 
             // If incoming message while viewing that contact AND tab is active, mark as read on backend
             if (incoming && isForActive && isTabActive) {
-              axiosInstance.post('/chat/mark-as-read', { senderId: otherId }).catch(e => console.error("Failed to auto-read", e));
+              axiosInstance.post('/chat/mark-as-read', { senderId: otherId })
+                .then(() => window.dispatchEvent(new Event('chat:updated')))
+                .catch(e => console.error("Failed to auto-read", e));
             }
 
             // Update contacts list
@@ -434,7 +437,7 @@ const Chat = () => {
   };
 
   return (
-    <div className='min-h-screen bg-[#0b1220] text-slate-200'>
+    <div className='ui-shell chat-shell text-slate-200'>
       <Navbar />
       <div className='mx-auto max-w-6xl p-4 sm:p-6 lg:p-8'>
         <div className='mb-2 text-right'>
@@ -443,13 +446,13 @@ const Chat = () => {
           </span>
         </div>
         <div className='grid grid-cols-12 gap-4'>
-          <div className='col-span-12 lg:col-span-4 rounded-2xl border border-slate-700 bg-slate-900/80 p-3 shadow-[0_18px_45px_rgba(2,6,23,0.4)] h-[600px] overflow-auto'>
+          <div className='chat-panel col-span-12 lg:col-span-4 rounded-2xl border border-slate-700 bg-slate-900/80 p-3 shadow-[0_18px_45px_rgba(2,6,23,0.4)] h-[600px] overflow-auto'>
             <h2 className='mb-2 text-lg font-semibold text-slate-100'>Contacts</h2>
             {contacts.length === 0 && <p className='text-slate-400'>No conversations yet.</p>}
             {contacts.map((c) => (
               <button
                 key={c.id}
-                className={`mb-2 w-full rounded-xl border p-3 text-left transition ${selectedContactId === c.id ? 'border-indigo-400/40 bg-indigo-500/10' : 'border-slate-700 bg-slate-900 hover:bg-slate-800'}`}
+                className={`chat-contact-btn mb-2 w-full rounded-xl border p-3 text-left transition ${selectedContactId === c.id ? 'chat-contact-active border-indigo-400/40 bg-indigo-500/10' : 'chat-contact-idle border-slate-700 bg-slate-900 hover:bg-slate-800'}`}
                 onClick={() => loadConversation(c.id)}
               >
                 <div className='flex items-center justify-between'>
@@ -460,7 +463,7 @@ const Chat = () => {
               </button>
             ))}
           </div>
-          <div className='col-span-12 lg:col-span-8 rounded-2xl border border-slate-700 bg-slate-900/80 p-3 shadow-[0_18px_45px_rgba(2,6,23,0.4)] h-[600px] flex flex-col'>
+          <div className='chat-panel col-span-12 lg:col-span-8 rounded-2xl border border-slate-700 bg-slate-900/80 p-3 shadow-[0_18px_45px_rgba(2,6,23,0.4)] h-[600px] flex flex-col'>
             <div className='mb-2'>
               <h2 className='font-semibold text-lg text-slate-100'>Conversation</h2>
               {selectedContactId ? (
@@ -471,7 +474,7 @@ const Chat = () => {
                 <p className='text-sm text-slate-400'>Select a contact to chat.</p>
               )}
             </div>
-            <div ref={messagesContainerRef} className='flex-1 border border-slate-700 rounded-xl p-2 overflow-auto bg-slate-950/70'>
+            <div ref={messagesContainerRef} className='chat-messages flex-1 border border-slate-700 rounded-xl p-2 overflow-auto bg-slate-950/70'>
               {conversation.length === 0 ? (
                 <div className='text-slate-400 p-4'>No messages yet.</div>
               ) : (
@@ -496,7 +499,7 @@ const Chat = () => {
                   const isMine = currentUser && m.senderId === currentUser.id;
                   return (
                     <div key={`${m.id}-${m.sentAt}`} className={`mb-2 flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`rounded-xl px-3 py-2 max-w-[80%] ${isMine ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white' : 'bg-slate-700 text-slate-100 border border-slate-600'}`}>
+                      <div className={`rounded-xl px-3 py-2 max-w-[80%] ${isMine ? 'chat-bubble-me bg-gradient-to-r from-indigo-600 to-violet-600 text-white' : 'chat-bubble-peer bg-slate-700 text-slate-100 border border-slate-600'}`}>
                         <div>{m.content}</div>
                         <div className='text-xs text-right mt-1 opacity-70'>{new Date(m.sentAt).toLocaleTimeString()}</div>
                       </div>

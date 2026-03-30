@@ -32,7 +32,7 @@ function AppLayout() {
   const showFooter = footerAllowedPaths.includes(location.pathname);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-900">
+    <div className="flex min-h-screen flex-col ui-shell">
       <main className="flex-1">
         <Routes>
           {/* Public Routes */}

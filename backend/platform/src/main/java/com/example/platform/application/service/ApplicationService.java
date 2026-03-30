@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +41,10 @@ public class ApplicationService {
 
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        if (job.getExpiresAt() != null && job.getExpiresAt().isBefore(LocalDate.now())) {
+            throw new RuntimeException("This job posting has expired");
+        }
 
         if (applicationRepository.existsByJobIdAndStudentId(jobId, student.getId())) {
             throw new RuntimeException("You have already applied for this job.");

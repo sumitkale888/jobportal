@@ -10,6 +10,7 @@ import com.example.platform.job.model.Job;
 import com.example.platform.job.repository.JobRepository;
 import com.example.platform.student.model.StudentProfile;
 import com.example.platform.student.repository.StudentProfileRepository;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -86,7 +87,9 @@ public class AiService {
     public List<MatchResult> findMatchingJobsForStudent(Long studentId) {
         String resumeText = extractTextFromResume(studentId);
 
-        List<Job> allJobs = jobRepository.findAll();
+        List<Job> allJobs = jobRepository.findAll().stream()
+            .filter(job -> job.getExpiresAt() == null || !job.getExpiresAt().isBefore(LocalDate.now()))
+            .collect(Collectors.toList());
         
         List<JobItem> jobItems = allJobs.stream()
             .map(job -> {

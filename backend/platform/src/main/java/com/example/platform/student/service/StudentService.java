@@ -37,13 +37,14 @@ public class StudentService {
     }
 
     @Transactional
-    public StudentProfile createOrUpdateProfile(String email, String university, String degree, Double cgpa, String skills, String experience, MultipartFile resumeFile) throws Exception {
+    public StudentProfile createOrUpdateProfile(String email, String university, String degree, String graduationYear, Double cgpa, String skills, String experience, MultipartFile resumeFile) throws Exception {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         StudentProfile profile = profileRepository.findByUserId(user.getId()).orElse(new StudentProfile());
 
         profile.setUser(user);
         profile.setUniversity(university);
         profile.setDegree(degree);
+        profile.setGraduationYear(graduationYear);
         profile.setCgpa(cgpa);
         profile.setSkills(skills);
         profile.setExperience(experience);
@@ -111,6 +112,9 @@ public class StudentService {
     }
 
     private StudentProfileDto mapToDto(StudentProfile profile) {
+        List<String> missingSections = calculateMissingSections(profile);
+        int profileCompletionPercentage = Math.round(((6 - missingSections.size()) / 6.0f) * 100);
+
         return StudentProfileDto.builder()
                 .id(profile.getId())
                 .name(profile.getUser().getName())
@@ -123,6 +127,37 @@ public class StudentService {
                 .experience(profile.getExperience())
                 .resumeUrl(profile.getResumeFileName()) 
                 .resumeFileName(profile.getResumeFileName())
+                .profileCompletionPercentage(profileCompletionPercentage)
+                .missingProfileSections(missingSections)
                 .build();
+    }
+
+    private List<String> calculateMissingSections(StudentProfile profile) {
+        List<String> missingSections = new ArrayList<>();
+
+        if (isBlank(profile.getUniversity())) {
+            missingSections.add("University");
+        }
+        if (isBlank(profile.getDegree())) {
+            missingSections.add("Degree");
+        }
+        if (isBlank(profile.getGraduationYear())) {
+            missingSections.add("Graduation Year");
+        }
+        if (isBlank(profile.getSkills())) {
+            missingSections.add("Skills");
+        }
+        if (isBlank(profile.getExperience())) {
+            missingSections.add("Experience");
+        }
+        if (profile.getResumeData() == null || profile.getResumeData().length == 0) {
+            missingSections.add("Resume");
+        }
+
+        return missingSections;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

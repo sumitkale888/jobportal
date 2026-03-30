@@ -31,6 +31,7 @@ const Notifications = () => {
             setNotifications(prev => prev.map(n => 
                 n.id === id ? { ...n, read: true } : n
             ));
+            window.dispatchEvent(new Event('notifications:updated'));
         } catch (error) {
             console.error("Error marking read");
         }

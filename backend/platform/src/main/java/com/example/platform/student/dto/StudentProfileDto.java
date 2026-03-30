@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -24,4 +26,6 @@ public class StudentProfileDto {
     
     private String skills; 
     private String resumeFileName; 
+    private Integer profileCompletionPercentage;
+    private List<String> missingProfileSections;
 }

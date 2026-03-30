@@ -6,6 +6,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AlertTriangle } from 'lucide-react'; // ✅ Icon for the restricted screen
 import { DashboardShell, PageHeader, SurfaceCard, Input, Select, TextArea, PrimaryButton, SecondaryButton } from '../components/ui/DashboardUI';
 
+const getDefaultExpiryDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    return date.toISOString().split('T')[0];
+};
+
 const PostJob = () => {
     const navigate = useNavigate();
     
@@ -18,6 +24,7 @@ const PostJob = () => {
         companyName: '',
         location: '',
         jobType: 'FULL_TIME',
+        expiresAt: getDefaultExpiryDate(),
         salary: '',
         description: '',
         requiredSkills: []
@@ -114,6 +121,18 @@ const PostJob = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <Input type="text" name="location" placeholder="Location" onChange={handleChange} required />
                             <Input type="number" name="salary" placeholder="Salary" onChange={handleChange} required />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="ui-label">Application Deadline</label>
+                            <Input
+                                type="date"
+                                name="expiresAt"
+                                value={jobData.expiresAt}
+                                min={new Date().toISOString().split('T')[0]}
+                                onChange={handleChange}
+                                required
+                            />
                         </div>
 
                         <div className="mb-4">

@@ -38,13 +38,14 @@ public class StudentController {
     public ResponseEntity<?> updateProfile(
             @RequestParam(value = "university", required = false) String university,
             @RequestParam(value = "degree", required = false) String degree,
+            @RequestParam(value = "graduationYear", required = false) String graduationYear,
             @RequestParam(value = "cgpa", required = false) Double cgpa,
             @RequestParam(value = "skills", required = false) String skills,
             @RequestParam(value = "experience", required = false) String experience,
             @RequestPart(value = "resume", required = false) MultipartFile resume,
             Principal principal) {
         try {
-            studentService.createOrUpdateProfile(principal.getName(), university, degree, cgpa, skills, experience, resume);
+            studentService.createOrUpdateProfile(principal.getName(), university, degree, graduationYear, cgpa, skills, experience, resume);
             return ResponseEntity.ok("Profile updated successfully");
         } catch (Exception e) {
             e.printStackTrace();

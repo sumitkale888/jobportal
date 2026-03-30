@@ -2,6 +2,7 @@ package com.example.platform.job.dto;
 
 import lombok.Builder;
 import lombok.Data;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,6 +21,8 @@ public class JobResponse {
     
     private List<String> requiredSkills;
     private LocalDateTime postedAt;
+    private LocalDate expiresAt;
+    private boolean expired;
     
     // ✅ Added to fix "undefined method" error
     private String postedByEmail; 

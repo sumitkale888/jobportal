@@ -106,7 +106,7 @@ const StudentDashboard = () => {
         }
       />
 
-      <section className='ui-fade-up grid gap-8 overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40 p-6 md:grid-cols-2 md:p-8'>
+      <section className='home-hero ui-fade-up grid gap-8 overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40 p-6 md:grid-cols-2 md:p-8'>
         <div className='flex flex-col justify-center'>
           <p className='ui-badge mb-4'>#1 Platform For Jobs</p>
           <h2 className='text-4xl font-black leading-tight text-slate-100 md:text-5xl'>
@@ -135,12 +135,12 @@ const StudentDashboard = () => {
             className='relative z-10 h-[320px] w-auto object-contain drop-shadow-[0_20px_40px_rgba(2,6,23,0.6)] md:h-[380px]'
           />
 
-          <div className='absolute left-2 top-5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 py-2 text-xs text-slate-200 shadow-xl md:left-6'>
+          <div className='home-hero-chip absolute left-2 top-5 rounded-xl border border-slate-700 bg-slate-900/90 px-3 py-2 text-xs text-slate-200 shadow-xl md:left-6'>
             <p className='font-bold'>Hiring Developer</p>
             <p className='text-slate-400'>Tech Corp • Full-time</p>
           </div>
 
-          <div className='absolute bottom-5 right-1 rounded-xl border border-indigo-400/30 bg-indigo-500/10 px-3 py-2 text-xs text-indigo-200 shadow-xl md:right-4'>
+          <div className='home-hero-chip-accent absolute bottom-5 right-1 rounded-xl border border-indigo-400/30 bg-indigo-500/10 px-3 py-2 text-xs text-indigo-200 shadow-xl md:right-4'>
             <p className='font-bold'>UI/UX Designer</p>
             <p className='text-indigo-100/80'>40 Vacancies</p>
           </div>
@@ -287,6 +287,11 @@ const StudentDashboard = () => {
                       <Wallet className='mr-1 h-4 w-4' /> Salary
                     </p>
                     <p className='text-lg font-black text-slate-100'>${job.salary ? Number(job.salary).toLocaleString() : 'N/A'}</p>
+                    {job.expiresAt && (
+                      <p className='mt-1 text-xs font-medium text-amber-300'>
+                        Apply before {new Date(job.expiresAt).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
                   <Link to={`/student/jobs/${job.id}`} className='ui-btn ui-btn-primary'>
                     Apply <ChevronRight className='h-4 w-4' />

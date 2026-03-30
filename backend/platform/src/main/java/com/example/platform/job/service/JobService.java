@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +22,8 @@ import java.util.Base64;
 @Service
 @RequiredArgsConstructor
 public class JobService {
+
+    private static final int DEFAULT_JOB_EXPIRY_DAYS = 30;
 
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
@@ -49,6 +52,7 @@ public class JobService {
                 .salary(request.getSalary())
                 .jobType(request.getJobType())
                 .requiredSkills(request.getRequiredSkills())
+            .expiresAt(resolveExpiryDate(request.getExpiresAt()))
                 .postedBy(recruiter)
                 .build();
 
@@ -58,6 +62,7 @@ public class JobService {
     @Transactional(readOnly = true)
     public List<JobResponse> getAllJobs() {
         return jobRepository.findAll().stream()
+                .filter(this::isActiveJob)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -74,6 +79,11 @@ public class JobService {
     public JobResponse getJobById(Long id) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        if (!isActiveJob(job)) {
+            throw new RuntimeException("Job is no longer active");
+        }
+
         return mapToResponse(job);
     }
 
@@ -99,10 +109,12 @@ public class JobService {
 
         job.setTitle(request.getTitle());
         job.setDescription(request.getDescription());
+        job.setCompanyName(request.getCompanyName());
         job.setLocation(request.getLocation());
         job.setSalary(request.getSalary());
         job.setJobType(request.getJobType());
         job.setRequiredSkills(request.getRequiredSkills());
+        job.setExpiresAt(resolveExpiryDate(request.getExpiresAt()));
         return mapToResponse(jobRepository.save(job));
     }
 
@@ -131,6 +143,8 @@ public class JobService {
                 .jobType(job.getJobType())
                 .requiredSkills(job.getRequiredSkills() != null ? job.getRequiredSkills() : new ArrayList<>())
                 .postedAt(job.getPostedAt())
+            .expiresAt(job.getExpiresAt())
+            .expired(!isActiveJob(job))
                 .postedByEmail(job.getPostedBy() != null ? job.getPostedBy().getEmail() : "Unknown")
                 .recruiterName(job.getPostedBy() != null ? job.getPostedBy().getName() : "Unknown")
                 
@@ -154,7 +168,24 @@ public class JobService {
 
         // Call the custom query
         return jobRepository.searchJobs(title, location, jobTypeEnum, skill).stream()
+                .filter(this::isActiveJob)
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    private LocalDate resolveExpiryDate(LocalDate requestedExpiryDate) {
+        LocalDate effectiveExpiryDate = requestedExpiryDate != null
+                ? requestedExpiryDate
+                : LocalDate.now().plusDays(DEFAULT_JOB_EXPIRY_DAYS);
+
+        if (effectiveExpiryDate.isBefore(LocalDate.now())) {
+            throw new RuntimeException("Expiry date cannot be in the past");
+        }
+
+        return effectiveExpiryDate;
+    }
+
+    private boolean isActiveJob(Job job) {
+        return job.getExpiresAt() == null || !job.getExpiresAt().isBefore(LocalDate.now());
     }
 }

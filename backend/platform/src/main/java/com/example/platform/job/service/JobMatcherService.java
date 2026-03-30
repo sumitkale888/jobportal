@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -45,7 +46,9 @@ public class JobMatcherService {
             return new ArrayList<>(); 
         }
 
-        List<Job> allJobs = jobRepository.findAll();
+        List<Job> allJobs = jobRepository.findAll().stream()
+                .filter(job -> job.getExpiresAt() == null || !job.getExpiresAt().isBefore(LocalDate.now()))
+                .collect(Collectors.toList());
 
         return allJobs.stream()
                 .map(job -> calculateMatch(job, studentSkills)) 

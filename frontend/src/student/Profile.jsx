@@ -17,6 +17,8 @@ const Profile = () => {
     graduationYear: "",
     cgpa: "",
     experience: "",
+    profileCompletionPercentage: 0,
+    missingProfileSections: [],
   });
 
   useEffect(() => {
@@ -36,6 +38,8 @@ const Profile = () => {
         graduationYear: data.graduationYear || "",
         cgpa: data.cgpa || "",
         experience: data.experience || "",
+        profileCompletionPercentage: Number(data.profileCompletionPercentage || 0),
+        missingProfileSections: data.missingProfileSections || [],
       });
     } catch (error) {
       console.log("No profile found, please create one.");
@@ -55,6 +59,7 @@ const Profile = () => {
       const uploadData = new FormData();
       uploadData.append("university", formData.university);
       uploadData.append("degree", formData.degree);
+      uploadData.append("graduationYear", formData.graduationYear);
       uploadData.append("cgpa", formData.cgpa);
       uploadData.append("skills", formData.skills);
       uploadData.append("experience", formData.experience);
@@ -66,6 +71,7 @@ const Profile = () => {
 
       await updateStudentProfile(uploadData);
       toast.success("Profile Updated Successfully!");
+      await loadProfile();
     } catch (error) {
       toast.error("Failed to update profile.");
     }
@@ -80,6 +86,30 @@ const Profile = () => {
             <p className='text-slate-400'>Loading...</p>
           ) : (
             <form onSubmit={handleSubmit}>
+              <div className="mb-8 rounded-2xl border border-indigo-400/30 bg-indigo-500/10 p-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="text-lg font-bold text-slate-100">Profile Completion</h3>
+                  <p className="text-sm font-semibold text-indigo-200">{formData.profileCompletionPercentage}% complete</p>
+                </div>
+                <div className="mt-3 h-3 w-full overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-500"
+                    style={{ width: `${formData.profileCompletionPercentage}%` }}
+                  />
+                </div>
+                {formData.missingProfileSections.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {formData.missingProfileSections.map((item) => (
+                      <span key={item} className="rounded-full border border-amber-400/40 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
+                        Add {item}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm font-medium text-emerald-300">Great work. Your profile is fully complete.</p>
+                )}
+              </div>
+
               {/* Personal Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
@@ -90,7 +120,7 @@ const Profile = () => {
                     type="text"
                     name="name"
                     value={formData.name}
-                    onChange={handleChange}
+                    readOnly
                   />
                 </div>
                 <div>
@@ -101,7 +131,7 @@ const Profile = () => {
                     type="text"
                     name="email"
                     value={formData.email}
-                    onChange={handleChange}
+                    readOnly
                   />
                 </div>
               </div>

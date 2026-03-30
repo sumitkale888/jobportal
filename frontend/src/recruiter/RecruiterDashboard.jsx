@@ -90,13 +90,14 @@ const RecruiterDashboard = () => {
                                 <th className="p-4">Job Title</th>
                                 <th className="p-4">Location</th>
                                 <th className="p-4">Posted Date</th>
+                                <th className="p-4">Expires</th>
                                 <th className="p-4 text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody className="text-slate-300">
                             {jobs.length === 0 ? (
                                 <tr>
-                                    <td colSpan="4" className="p-8">
+                                    <td colSpan="5" className="p-8">
                                         <EmptyState title="No jobs posted yet" description="Create your first role to begin receiving applications." />
                                     </td>
                                 </tr>
@@ -106,6 +107,15 @@ const RecruiterDashboard = () => {
                                         <td className="p-4 font-bold text-slate-100">{job.title}</td>
                                         <td className="p-4">{job.location}</td>
                                         <td className="p-4">{new Date(job.postedAt).toLocaleDateString()}</td>
+                                        <td className="p-4">
+                                            {job.expiresAt ? (
+                                                <span className={job.expired ? 'rounded-full border border-rose-400/40 bg-rose-500/10 px-2 py-1 text-xs font-bold text-rose-300' : 'rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-1 text-xs font-bold text-emerald-300'}>
+                                                    {job.expired ? 'Expired' : new Date(job.expiresAt).toLocaleDateString()}
+                                                </span>
+                                            ) : (
+                                                <span className='text-slate-400'>Not set</span>
+                                            )}
+                                        </td>
                                         <td className="p-4 text-center flex justify-center gap-4">
                                             <Link 
                                                 to={`/recruiter/jobs/${job.id}/applicants`} 

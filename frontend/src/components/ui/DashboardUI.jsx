@@ -28,9 +28,17 @@ export const PageHeader = ({ icon: Icon, badge, title, subtitle, actions, classN
   </header>
 );
 
-export const SurfaceCard = ({ children, className = '' }) => <section className={cx('ui-card', className)}>{children}</section>;
+export const SurfaceCard = ({ children, className = '', ...props }) => (
+  <section className={cx('ui-card', className)} {...props}>
+    {children}
+  </section>
+);
 
-export const GlassPanel = ({ children, className = '' }) => <section className={cx('ui-glass', className)}>{children}</section>;
+export const GlassPanel = ({ children, className = '', ...props }) => (
+  <section className={cx('ui-glass', className)} {...props}>
+    {children}
+  </section>
+);
 
 export const PrimaryButton = ({ className = '', type = 'button', children, ...props }) => (
   <button type={type} className={cx('ui-btn ui-btn-primary', className)} {...props}>

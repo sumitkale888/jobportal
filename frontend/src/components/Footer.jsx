@@ -61,20 +61,20 @@ const Footer = () => {
     };
 
     return (
-        <footer className="border-t border-slate-200 bg-slate-950 text-slate-200">
+        <footer className="theme-footer border-t border-slate-200 bg-slate-950 text-slate-200">
             <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                 <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-4">
                     <div>
-                        <h3 className="font-['Manrope'] text-2xl font-extrabold text-white">JobPortal</h3>
+                        <h3 className="font-['Manrope'] text-2xl font-extrabold text-slate-100">JobPortal</h3>
                         <p className="mt-3 text-sm leading-6 text-slate-300">
                             Career platform connecting students, professionals, and recruiters with faster hiring workflows.
                         </p>
                         <div className="mt-5 space-y-2 text-sm text-slate-300">
-                            <a href="mailto:support@jobportal.com" className="flex items-center gap-2 hover:text-white">
+                            <a href="mailto:support@jobportal.com" className="flex items-center gap-2 hover:text-slate-100">
                                 <Mail className="h-4 w-4" /> support@jobportal.com
                             </a>
-                            <a href="tel:+919876543210" className="flex items-center gap-2 hover:text-white">
-                                <Phone className="h-4 w-4" /> +91 98765 43210
+                            <a href="tel:+919876543210" className="flex items-center gap-2 hover:text-slate-100">
+                                <Phone className="h-4 w-4" /> +91 83299 06715
                             </a>
                         </div>
                     </div>
@@ -86,7 +86,7 @@ const Footer = () => {
                                 <li key={item.label}>
                                     <Link
                                         to={item.to}
-                                        className="inline-flex items-center gap-1 text-slate-300 hover:text-white"
+                                        className="inline-flex items-center gap-1 text-slate-300 hover:text-slate-100"
                                     >
                                         {item.label} <ArrowUpRight className="h-3.5 w-3.5" />
                                     </Link>
@@ -102,7 +102,7 @@ const Footer = () => {
                                 <li key={item.label}>
                                     <Link
                                         to={item.to}
-                                        className="inline-flex items-center gap-1 text-slate-300 hover:text-white"
+                                        className="inline-flex items-center gap-1 text-slate-300 hover:text-slate-100"
                                     >
                                         {item.label} <ArrowUpRight className="h-3.5 w-3.5" />
                                     </Link>
@@ -119,7 +119,7 @@ const Footer = () => {
                         <button
                             type="button"
                             onClick={scrollToTop}
-                            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 hover:border-slate-500 hover:text-white"
+                            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-200 hover:border-slate-500 hover:text-slate-100"
                         >
                             Back to Top <ChevronUp className="h-4 w-4" />
                         </button>

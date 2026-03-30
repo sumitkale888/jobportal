@@ -1,11 +1,13 @@
 package com.example.platform.job.repository;
 
+import com.example.platform.common.enums.JobStatus;
 import com.example.platform.common.enums.JobType;
 import com.example.platform.job.model.Job;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface JobRepository extends JpaRepository<Job, Long> {
@@ -14,6 +16,8 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     
     // For Dashboard Stats
     long countByPostedByEmail(String email);
+
+    List<Job> findByStatusNotAndExpiresAtBefore(JobStatus status, LocalDate expiresAt);
 
    @Query("SELECT DISTINCT j FROM Job j " +
            "LEFT JOIN j.requiredSkills s " +

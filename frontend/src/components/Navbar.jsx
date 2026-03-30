@@ -1,9 +1,12 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { Bell, LogOut, Briefcase, Sparkles, ShieldCheck, MessageSquare, PlusCircle, LayoutDashboard, UserCircle2 } from 'lucide-react';
+import { Bell, LogOut, Briefcase, Sparkles, ShieldCheck, MessageSquare, PlusCircle, LayoutDashboard, UserCircle2, Moon, Sun } from 'lucide-react';
 import { getMyNotifications } from '../api/notificationApi';
 import { getMyMessages } from '../api/recruiterApi';
+
+const LEGACY_THEME_STORAGE_KEY = 'jobportal-theme';
+const getThemeStorageKey = (email) => `jobportal-theme:${email || 'guest'}`;
 
 const Navbar = () => {
     const { user, logout, chatUnreadCount, setChatUnreadCount } = useContext(AuthContext);
@@ -11,21 +14,41 @@ const Navbar = () => {
     const location = useLocation(); 
     
     const [unreadCount, setUnreadCount] = useState(0);
+    const [theme, setTheme] = useState('dark');
 
-    const fetchUnreadCount = useCallback(async () => {
+    useEffect(() => {
+        const storageKey = getThemeStorageKey(user?.email);
+        const savedTheme = localStorage.getItem(storageKey)
+            || localStorage.getItem(LEGACY_THEME_STORAGE_KEY)
+            || 'dark';
+
+        setTheme(savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }, [user?.email]);
+
+    const toggleTheme = () => {
+        const nextTheme = theme === 'dark' ? 'light' : 'dark';
+        const storageKey = getThemeStorageKey(user?.email);
+
+        setTheme(nextTheme);
+        document.documentElement.setAttribute('data-theme', nextTheme);
+        localStorage.setItem(storageKey, nextTheme);
+    };
+
+    const fetchUnreadCount = useCallback(async (forceChatRefresh = false) => {
         try {
             const notifData = await getMyNotifications();
             const unreadNotifs = notifData.filter(n => !n.read).length; 
             setUnreadCount(unreadNotifs);
 
             // Fetch chat messages and rely strictly on the backend 'isRead' flag
-            if (location.pathname !== '/chat') {
+            if (forceChatRefresh || location.pathname !== '/chat') {
                 const msgs = await getMyMessages();
                 
                 const unreadSenders = new Set();
                 msgs.forEach((m) => {
-                    // If the message was sent TO the current user and is NOT read
-                    if (m.recipientId === user.id && m.isRead === false) {
+                    // Use email for direction to avoid depending on optional user.id in auth context
+                    if (m.recipientEmail === user.email && m.isRead === false) {
                         unreadSenders.add(m.senderId);
                     }
                 });
@@ -48,6 +71,23 @@ const Navbar = () => {
         }
     }, [user, location.pathname, fetchUnreadCount]);
 
+    useEffect(() => {
+        if (!user) {
+            return;
+        }
+
+        const handleNotificationUpdate = () => fetchUnreadCount(true);
+        const handleChatUpdate = () => fetchUnreadCount(true);
+
+        window.addEventListener('notifications:updated', handleNotificationUpdate);
+        window.addEventListener('chat:updated', handleChatUpdate);
+
+        return () => {
+            window.removeEventListener('notifications:updated', handleNotificationUpdate);
+            window.removeEventListener('chat:updated', handleChatUpdate);
+        };
+    }, [user, fetchUnreadCount]);
+
     const handleLogout = () => {
         logout();
         navigate('/login');
@@ -62,7 +102,7 @@ const Navbar = () => {
     const navItemAccent = 'inline-flex items-center gap-2 rounded-xl border border-indigo-400/30 bg-indigo-500/15 px-3 py-2 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-500/25';
 
     return (
-        <nav className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/85 backdrop-blur-xl">
+        <nav className="theme-navbar sticky top-0 z-50 border-b border-slate-800 bg-slate-950/85 backdrop-blur-xl">
             <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between gap-3">
                     <Link to="/" className="group inline-flex items-center gap-3">
@@ -85,12 +125,20 @@ const Navbar = () => {
                                     </span>
                                 )}
                             </Link>
+                            <button onClick={toggleTheme} className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-indigo-400/40 hover:bg-slate-800">
+                                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                                {theme === 'dark' ? 'Light' : 'Dark'}
+                            </button>
                             <button onClick={handleLogout} className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-rose-300 transition hover:border-rose-400/40 hover:bg-rose-500/10">
                                 <LogOut className="h-4 w-4" /> Logout
                             </button>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
+                            <button onClick={toggleTheme} className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-indigo-400/40 hover:bg-slate-800">
+                                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                                {theme === 'dark' ? 'Light' : 'Dark'}
+                            </button>
                             <Link to="/login" className="inline-flex items-center rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-indigo-400/40 hover:bg-slate-800">Login</Link>
                             <Link to="/register" className="inline-flex items-center rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_25px_rgba(99,102,241,0.35)] transition hover:scale-[1.02]">Sign Up</Link>
                         </div>
@@ -98,7 +146,7 @@ const Navbar = () => {
                 </div>
 
                 {user && (
-                    <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-slate-800 bg-slate-900/70 p-2">
+                    <div className="theme-toolbar flex flex-wrap items-center gap-1 rounded-2xl border border-slate-800 bg-slate-900/70 p-2">
                         {isAdmin && (
                             <Link to="/admin/dashboard" className={navItemAccent}>
                                 <ShieldCheck className="h-4 w-4" /> Admin Dashboard
