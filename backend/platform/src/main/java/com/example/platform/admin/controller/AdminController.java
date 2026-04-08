@@ -126,6 +126,18 @@ public class AdminController {
     }
 
     // Recruiter / Company Verification
+        @PreAuthorize("hasAuthority('ADMIN') or hasRole('ADMIN')")
+        @GetMapping("/recruiters")
+        public ResponseEntity<List<RecruiterProfileDto>> getRecruiterProfiles(
+            @RequestParam(required = false) Boolean verified
+        ) {
+        List<RecruiterProfileDto> recruiters = recruiterProfileRepository.findAll().stream()
+            .filter(p -> verified == null || Objects.equals(Boolean.TRUE.equals(p.getIsVerified()), verified))
+            .map(this::mapRecruiterProfile)
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(recruiters);
+        }
+
     @PreAuthorize("hasAuthority('ADMIN') or hasRole('ADMIN')")
     @GetMapping("/pending-recruiters")
     public ResponseEntity<List<RecruiterProfile>> getPendingRecruiters() {
@@ -152,6 +164,34 @@ public class AdminController {
     public ResponseEntity<Map<String, String>> rejectRecruiter(@PathVariable Long profileId) {
         recruiterProfileRepository.deleteById(profileId);
         return ResponseEntity.ok(Map.of("message", "Recruiter rejected and removed"));
+    }
+
+    private RecruiterProfileDto mapRecruiterProfile(RecruiterProfile profile) {
+        return RecruiterProfileDto.builder()
+                .id(profile.getId())
+                .userId(profile.getUser() != null ? profile.getUser().getId() : null)
+                .recruiterName(profile.getUser() != null ? profile.getUser().getName() : null)
+                .recruiterEmail(profile.getUser() != null ? profile.getUser().getEmail() : null)
+                .companyName(profile.getCompanyName())
+                .websiteUrl(profile.getWebsiteUrl())
+                .companyDescription(profile.getCompanyDescription())
+                .headOfficeLocation(profile.getHeadOfficeLocation())
+                .industry(profile.getIndustry())
+                .companySize(profile.getCompanySize())
+                .foundedYear(profile.getFoundedYear())
+                .companyType(profile.getCompanyType())
+                .contactPersonName(profile.getContactPersonName())
+                .contactPersonDesignation(profile.getContactPersonDesignation())
+                .contactPhone(profile.getContactPhone())
+                .hrEmail(profile.getHrEmail())
+                .linkedInUrl(profile.getLinkedInUrl())
+                .hiringForRoles(profile.getHiringForRoles())
+                .officeLocations(profile.getOfficeLocations())
+                .benefits(profile.getBenefits())
+                .aboutCulture(profile.getAboutCulture())
+                .verified(Boolean.TRUE.equals(profile.getIsVerified()))
+                .hasLogo(profile.getCompanyLogo() != null && profile.getCompanyLogo().length > 0)
+                .build();
     }
 
     // Job Management
@@ -436,5 +476,35 @@ public class AdminController {
         private String companyName;
         private String status;
         private int reportCount;
+    }
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    private static class RecruiterProfileDto {
+        private Long id;
+        private Long userId;
+        private String recruiterName;
+        private String recruiterEmail;
+        private String companyName;
+        private String websiteUrl;
+        private String companyDescription;
+        private String headOfficeLocation;
+        private String industry;
+        private String companySize;
+        private String foundedYear;
+        private String companyType;
+        private String contactPersonName;
+        private String contactPersonDesignation;
+        private String contactPhone;
+        private String hrEmail;
+        private String linkedInUrl;
+        private String hiringForRoles;
+        private String officeLocations;
+        private String benefits;
+        private String aboutCulture;
+        private Boolean verified;
+        private Boolean hasLogo;
     }
 }

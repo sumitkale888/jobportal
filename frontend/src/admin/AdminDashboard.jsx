@@ -3,6 +3,7 @@ import { ShieldCheck } from "lucide-react";
 import { DashboardShell, PageHeader, SurfaceCard } from "../components/ui/DashboardUI";
 import AdminStats from "./AdminStats";
 import AdminUsers from "./AdminUsers";
+import AdminRecruiters from "./AdminRecruiters";
 import AdminJobs from "./AdminJobs";
 import AdminApplications from "./AdminApplications";
 import AdminSettings from "./AdminSettings";
@@ -10,6 +11,7 @@ import AdminSettings from "./AdminSettings";
 const tabs = [
   { key: "stats", label: "Dashboard" },
   { key: "users", label: "User Management" },
+  { key: "recruiters", label: "Recruiter Verification" },
   { key: "jobs", label: "Job Management" },
   { key: "applications", label: "Applications" },
   { key: "settings", label: "System Settings" },
@@ -42,6 +44,7 @@ const AdminDashboard = () => {
 
         {active === "stats" && <AdminStats />}
         {active === "users" && <AdminUsers />}
+        {active === "recruiters" && <AdminRecruiters />}
         {active === "jobs" && <AdminJobs />}
         {active === "applications" && <AdminApplications />}
         {active === "settings" && <AdminSettings />}

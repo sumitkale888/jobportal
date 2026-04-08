@@ -34,6 +34,19 @@ public class RecruiterService {
         profile.setWebsiteUrl(request.getWebsiteUrl());
         profile.setCompanyDescription(request.getCompanyDescription());
         profile.setHeadOfficeLocation(request.getHeadOfficeLocation());
+        profile.setIndustry(request.getIndustry());
+        profile.setCompanySize(request.getCompanySize());
+        profile.setFoundedYear(request.getFoundedYear());
+        profile.setCompanyType(request.getCompanyType());
+        profile.setContactPersonName(request.getContactPersonName());
+        profile.setContactPersonDesignation(request.getContactPersonDesignation());
+        profile.setContactPhone(request.getContactPhone());
+        profile.setHrEmail(request.getHrEmail());
+        profile.setLinkedInUrl(request.getLinkedInUrl());
+        profile.setHiringForRoles(request.getHiringForRoles());
+        profile.setOfficeLocations(request.getOfficeLocations());
+        profile.setBenefits(request.getBenefits());
+        profile.setAboutCulture(request.getAboutCulture());
 
         if (logoFile != null && !logoFile.isEmpty()) {
             profile.setCompanyLogo(logoFile.getBytes());

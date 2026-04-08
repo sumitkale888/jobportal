@@ -37,17 +37,52 @@ public class StudentService {
     }
 
     @Transactional
-    public StudentProfile createOrUpdateProfile(String email, String university, String degree, String graduationYear, Double cgpa, String skills, String experience, MultipartFile resumeFile) throws Exception {
+    public StudentProfile createOrUpdateProfile(
+            String email,
+            String phone,
+            String location,
+            String headline,
+            String about,
+            String university,
+            String degree,
+            String graduationYear,
+            Double cgpa,
+            String specialization,
+            String currentSemester,
+            String courseType,
+            String skills,
+            String experience,
+            String projects,
+            String certifications,
+            String achievements,
+            String preferredRoles,
+            String languages,
+            String links,
+            MultipartFile resumeFile
+    ) throws Exception {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         StudentProfile profile = profileRepository.findByUserId(user.getId()).orElse(new StudentProfile());
 
         profile.setUser(user);
+        profile.setPhone(phone);
+        profile.setLocation(location);
+        profile.setHeadline(headline);
+        profile.setAbout(about);
         profile.setUniversity(university);
         profile.setDegree(degree);
         profile.setGraduationYear(graduationYear);
         profile.setCgpa(cgpa);
+        profile.setSpecialization(specialization);
+        profile.setCurrentSemester(currentSemester);
+        profile.setCourseType(courseType);
         profile.setSkills(skills);
         profile.setExperience(experience);
+        profile.setProjects(projects);
+        profile.setCertifications(certifications);
+        profile.setAchievements(achievements);
+        profile.setPreferredRoles(preferredRoles);
+        profile.setLanguages(languages);
+        profile.setLinks(links);
 
         if (resumeFile != null && !resumeFile.isEmpty()) {
             profile.setResumeData(resumeFile.getBytes());
@@ -113,18 +148,32 @@ public class StudentService {
 
     private StudentProfileDto mapToDto(StudentProfile profile) {
         List<String> missingSections = calculateMissingSections(profile);
-        int profileCompletionPercentage = Math.round(((6 - missingSections.size()) / 6.0f) * 100);
+        final int totalSections = 12;
+        int profileCompletionPercentage = Math.round(((totalSections - missingSections.size()) / (float) totalSections) * 100);
 
         return StudentProfileDto.builder()
                 .id(profile.getId())
                 .name(profile.getUser().getName())
                 .email(profile.getUser().getEmail())
+            .phone(profile.getPhone())
+            .location(profile.getLocation())
+            .headline(profile.getHeadline())
+            .about(profile.getAbout())
                 .university(profile.getUniversity())
                 .degree(profile.getDegree())
                 .graduationYear(profile.getGraduationYear())
                 .cgpa(profile.getCgpa())
+            .specialization(profile.getSpecialization())
+            .currentSemester(profile.getCurrentSemester())
+            .courseType(profile.getCourseType())
                 .skills(profile.getSkills())
                 .experience(profile.getExperience())
+            .projects(profile.getProjects())
+            .certifications(profile.getCertifications())
+            .achievements(profile.getAchievements())
+            .preferredRoles(profile.getPreferredRoles())
+            .languages(profile.getLanguages())
+            .links(profile.getLinks())
                 .resumeUrl(profile.getResumeFileName()) 
                 .resumeFileName(profile.getResumeFileName())
                 .profileCompletionPercentage(profileCompletionPercentage)
@@ -135,6 +184,18 @@ public class StudentService {
     private List<String> calculateMissingSections(StudentProfile profile) {
         List<String> missingSections = new ArrayList<>();
 
+        if (isBlank(profile.getPhone())) {
+            missingSections.add("Phone");
+        }
+        if (isBlank(profile.getLocation())) {
+            missingSections.add("Location");
+        }
+        if (isBlank(profile.getHeadline())) {
+            missingSections.add("Headline");
+        }
+        if (isBlank(profile.getAbout())) {
+            missingSections.add("About");
+        }
         if (isBlank(profile.getUniversity())) {
             missingSections.add("University");
         }
@@ -143,6 +204,12 @@ public class StudentService {
         }
         if (isBlank(profile.getGraduationYear())) {
             missingSections.add("Graduation Year");
+        }
+        if (isBlank(profile.getProjects())) {
+            missingSections.add("Projects");
+        }
+        if (isBlank(profile.getPreferredRoles())) {
+            missingSections.add("Preferred Roles");
         }
         if (isBlank(profile.getSkills())) {
             missingSections.add("Skills");

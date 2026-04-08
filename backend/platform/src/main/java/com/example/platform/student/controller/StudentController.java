@@ -36,16 +36,51 @@ public class StudentController {
     @PostMapping(value = "/profile", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('STUDENT')")
     public ResponseEntity<?> updateProfile(
+            @RequestParam(value = "phone", required = false) String phone,
+            @RequestParam(value = "location", required = false) String location,
+            @RequestParam(value = "headline", required = false) String headline,
+            @RequestParam(value = "about", required = false) String about,
             @RequestParam(value = "university", required = false) String university,
             @RequestParam(value = "degree", required = false) String degree,
             @RequestParam(value = "graduationYear", required = false) String graduationYear,
             @RequestParam(value = "cgpa", required = false) Double cgpa,
+            @RequestParam(value = "specialization", required = false) String specialization,
+            @RequestParam(value = "currentSemester", required = false) String currentSemester,
+            @RequestParam(value = "courseType", required = false) String courseType,
             @RequestParam(value = "skills", required = false) String skills,
             @RequestParam(value = "experience", required = false) String experience,
+            @RequestParam(value = "projects", required = false) String projects,
+            @RequestParam(value = "certifications", required = false) String certifications,
+            @RequestParam(value = "achievements", required = false) String achievements,
+            @RequestParam(value = "preferredRoles", required = false) String preferredRoles,
+            @RequestParam(value = "languages", required = false) String languages,
+            @RequestParam(value = "links", required = false) String links,
             @RequestPart(value = "resume", required = false) MultipartFile resume,
             Principal principal) {
         try {
-            studentService.createOrUpdateProfile(principal.getName(), university, degree, graduationYear, cgpa, skills, experience, resume);
+            studentService.createOrUpdateProfile(
+                principal.getName(),
+                phone,
+                location,
+                headline,
+                about,
+                university,
+                degree,
+                graduationYear,
+                cgpa,
+                specialization,
+                currentSemester,
+                courseType,
+                skills,
+                experience,
+                projects,
+                certifications,
+                achievements,
+                preferredRoles,
+                languages,
+                links,
+                resume
+            );
             return ResponseEntity.ok("Profile updated successfully");
         } catch (Exception e) {
             e.printStackTrace();

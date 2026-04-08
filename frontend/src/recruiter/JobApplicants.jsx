@@ -8,6 +8,7 @@ import { DashboardShell, PageHeader, SurfaceCard, Input, PrimaryButton, EmptySta
 const JobApplicants = () => {
     const { jobId } = useParams();
     const [applicants, setApplicants] = useState([]);
+    const [expandedApplicantId, setExpandedApplicantId] = useState(null);
     const [rankedCandidates, setRankedCandidates] = useState([]);
     const [rankStatus, setRankStatus] = useState('idle');
     const [loading, setLoading] = useState(true);
@@ -173,13 +174,36 @@ const JobApplicants = () => {
                                             <h3 className="text-xl font-bold text-slate-100 flex items-center">
                                                 <User className="w-5 h-5 mr-2 text-indigo-300"/> {app.name}
                                             </h3>
-                                            <p className="text-slate-400 text-sm">{app.email} • {app.university} ({app.degree})</p>
+                                            <p className="text-slate-400 text-sm">{app.email} • {app.phone || 'No phone provided'}</p>
+                                            <p className="text-slate-400 text-sm">{app.university || 'N/A'} ({app.degree || 'N/A'}) • {app.location || 'Location not provided'}</p>
+                                            {app.headline && <p className="mt-2 text-sm text-indigo-200 font-medium">{app.headline}</p>}
                                             
                                             <div className="mt-3 text-sm">
                                                 <p><span className="font-semibold">Skills:</span> {app.skills}</p>
                                                 <p className="mt-1"><span className="font-semibold">Experience:</span> {app.experience || "Fresher"}</p>
                                                 <p className="mt-1"><span className="font-semibold">CGPA:</span> {app.cgpa}</p>
                                             </div>
+
+                                            <button
+                                                onClick={() => setExpandedApplicantId((prev) => prev === app.applicationId ? null : app.applicationId)}
+                                                className="mt-3 ui-btn ui-btn-secondary py-1.5 text-xs"
+                                            >
+                                                {expandedApplicantId === app.applicationId ? 'Hide Full Profile' : 'View Full Profile'}
+                                            </button>
+
+                                            {expandedApplicantId === app.applicationId && (
+                                                <div className="mt-4 rounded-lg border border-slate-700 bg-slate-950/70 p-4 text-sm text-slate-200 space-y-3">
+                                                    {app.about && <p><span className="font-semibold text-slate-100">About:</span> {app.about}</p>}
+                                                    <p><span className="font-semibold text-slate-100">Education:</span> {app.degree || 'N/A'}{app.specialization ? `, ${app.specialization}` : ''} at {app.university || 'N/A'}</p>
+                                                    <p><span className="font-semibold text-slate-100">Graduation Year:</span> {app.graduationYear || 'N/A'} | <span className="font-semibold text-slate-100">Semester:</span> {app.currentSemester || 'N/A'} | <span className="font-semibold text-slate-100">Course Type:</span> {app.courseType || 'N/A'}</p>
+                                                    {app.projects && <p><span className="font-semibold text-slate-100">Projects:</span> {app.projects}</p>}
+                                                    {app.certifications && <p><span className="font-semibold text-slate-100">Certifications:</span> {app.certifications}</p>}
+                                                    {app.achievements && <p><span className="font-semibold text-slate-100">Achievements:</span> {app.achievements}</p>}
+                                                    {app.preferredRoles && <p><span className="font-semibold text-slate-100">Preferred Roles:</span> {app.preferredRoles}</p>}
+                                                    {app.languages && <p><span className="font-semibold text-slate-100">Languages:</span> {app.languages}</p>}
+                                                    {app.links && <p><span className="font-semibold text-slate-100">Profile Links:</span> {app.links}</p>}
+                                                </div>
+                                            )}
 
                                             {/* ✅ UPDATED: Secure PDF Download Button */}
                                             {app.resumeUrl && (

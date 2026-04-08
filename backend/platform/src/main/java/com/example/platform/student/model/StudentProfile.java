@@ -24,12 +24,33 @@ public class StudentProfile {
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
+    private String phone;
+    private String location;
+    private String headline;
+    @Column(length = 2000)
+    private String about;
+
     private String university;
     private String degree;
     private String graduationYear;
     private Double cgpa;
+    private String specialization;
+    private String currentSemester;
+    private String courseType;
+
+    @Column(length = 2000)
     private String experience;
-    private String skills; 
+    @Column(length = 4000)
+    private String projects;
+    @Column(length = 2000)
+    private String certifications;
+    @Column(length = 2000)
+    private String achievements;
+    private String preferredRoles;
+    private String languages;
+    @Column(length = 2000)
+    private String links;
+    private String skills;
 
     // ✅ FIXED: Only using these three fields for the PDF file
     @Lob

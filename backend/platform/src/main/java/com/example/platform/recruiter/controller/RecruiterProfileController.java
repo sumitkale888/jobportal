@@ -29,6 +29,19 @@ public class RecruiterProfileController {
             @RequestParam("website") String website,
             @RequestParam("description") String description,
             @RequestParam("location") String location,
+            @RequestParam(value = "industry", required = false) String industry,
+            @RequestParam(value = "companySize", required = false) String companySize,
+            @RequestParam(value = "foundedYear", required = false) String foundedYear,
+            @RequestParam(value = "companyType", required = false) String companyType,
+            @RequestParam(value = "contactPersonName", required = false) String contactPersonName,
+            @RequestParam(value = "contactPersonDesignation", required = false) String contactPersonDesignation,
+            @RequestParam(value = "contactPhone", required = false) String contactPhone,
+            @RequestParam(value = "hrEmail", required = false) String hrEmail,
+            @RequestParam(value = "linkedInUrl", required = false) String linkedInUrl,
+            @RequestParam(value = "hiringForRoles", required = false) String hiringForRoles,
+            @RequestParam(value = "officeLocations", required = false) String officeLocations,
+            @RequestParam(value = "benefits", required = false) String benefits,
+            @RequestParam(value = "aboutCulture", required = false) String aboutCulture,
             @RequestParam(value = "logo", required = false) MultipartFile logo,
             Principal principal
     ) {
@@ -38,6 +51,19 @@ public class RecruiterProfileController {
                     .websiteUrl(website)
                     .companyDescription(description)
                     .headOfficeLocation(location)
+                .industry(industry)
+                .companySize(companySize)
+                .foundedYear(foundedYear)
+                .companyType(companyType)
+                .contactPersonName(contactPersonName)
+                .contactPersonDesignation(contactPersonDesignation)
+                .contactPhone(contactPhone)
+                .hrEmail(hrEmail)
+                .linkedInUrl(linkedInUrl)
+                .hiringForRoles(hiringForRoles)
+                .officeLocations(officeLocations)
+                .benefits(benefits)
+                .aboutCulture(aboutCulture)
                     .build();
 
             return ResponseEntity.ok(recruiterService.updateProfile(request, logo, principal.getName()));

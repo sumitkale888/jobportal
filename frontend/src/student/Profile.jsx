@@ -1,22 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { getStudentProfile, updateStudentProfile } from "../api/studentApi";
 import { toast } from "react-toastify";
-import { User, FileText, Code, BookOpen, Award } from "lucide-react";
+import { User, FileText, Code, BookOpen, Award, Link as LinkIcon, MapPin, Phone, Briefcase } from "lucide-react";
 import { DashboardShell, PageHeader, SurfaceCard, Input, TextArea, PrimaryButton } from "../components/ui/DashboardUI";
 
 const Profile = () => {
   const [loading, setLoading] = useState(true);
-  const [file, setFile] = useState(null); // ✅ Added state for the PDF file
+  const [file, setFile] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    skills: "",
-    resumeUrl: "", // Now acts as a placeholder for the file name
+    phone: "",
+    location: "",
+    headline: "",
+    about: "",
+
     university: "",
     degree: "",
     graduationYear: "",
     cgpa: "",
+    specialization: "",
+    currentSemester: "",
+    courseType: "",
+
+    skills: "",
     experience: "",
+    projects: "",
+    certifications: "",
+    achievements: "",
+    preferredRoles: "",
+    languages: "",
+    links: "",
+
+    resumeUrl: "",
     profileCompletionPercentage: 0,
     missingProfileSections: [],
   });
@@ -31,13 +47,29 @@ const Profile = () => {
       setFormData({
         name: data.name || "",
         email: data.email || "",
-        skills: data.skills || "",
-        resumeUrl: data.resumeUrl || data.resumeName || "", // Handle old URL or new filename
+        phone: data.phone || "",
+        location: data.location || "",
+        headline: data.headline || "",
+        about: data.about || "",
+
         university: data.university || "",
         degree: data.degree || "",
         graduationYear: data.graduationYear || "",
         cgpa: data.cgpa || "",
+        specialization: data.specialization || "",
+        currentSemester: data.currentSemester || "",
+        courseType: data.courseType || "",
+
+        skills: data.skills || "",
         experience: data.experience || "",
+        projects: data.projects || "",
+        certifications: data.certifications || "",
+        achievements: data.achievements || "",
+        preferredRoles: data.preferredRoles || "",
+        languages: data.languages || "",
+        links: data.links || "",
+
+        resumeUrl: data.resumeUrl || data.resumeName || "",
         profileCompletionPercentage: Number(data.profileCompletionPercentage || 0),
         missingProfileSections: data.missingProfileSections || [],
       });
@@ -57,14 +89,26 @@ const Profile = () => {
     e.preventDefault();
     try {
       const uploadData = new FormData();
+      uploadData.append("phone", formData.phone);
+      uploadData.append("location", formData.location);
+      uploadData.append("headline", formData.headline);
+      uploadData.append("about", formData.about);
       uploadData.append("university", formData.university);
       uploadData.append("degree", formData.degree);
       uploadData.append("graduationYear", formData.graduationYear);
       uploadData.append("cgpa", formData.cgpa);
+      uploadData.append("specialization", formData.specialization);
+      uploadData.append("currentSemester", formData.currentSemester);
+      uploadData.append("courseType", formData.courseType);
       uploadData.append("skills", formData.skills);
       uploadData.append("experience", formData.experience);
-      
-      // If the user selected a new PDF, attach it
+      uploadData.append("projects", formData.projects);
+      uploadData.append("certifications", formData.certifications);
+      uploadData.append("achievements", formData.achievements);
+      uploadData.append("preferredRoles", formData.preferredRoles);
+      uploadData.append("languages", formData.languages);
+      uploadData.append("links", formData.links);
+
       if (file) {
         uploadData.append("resume", file);
       }
@@ -79,7 +123,7 @@ const Profile = () => {
 
   return (
     <DashboardShell contentClassName='mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8'>
-        <PageHeader badge='Student Profile' icon={User} title='Student Profile' subtitle='Build a high-signal profile that improves matching and recruiter response rates.' />
+        <PageHeader badge='Student Profile' icon={User} title='Student Profile' subtitle='Build an Unstop-style profile with complete academics, skills, projects, and proof of work.' />
         <SurfaceCard>
 
           {loading ? (
@@ -111,6 +155,9 @@ const Profile = () => {
               </div>
 
               {/* Personal Info */}
+              <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center">
+                <User className="w-5 h-5 mr-2" /> Personal Details
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="ui-label">
@@ -134,6 +181,56 @@ const Profile = () => {
                     readOnly
                   />
                 </div>
+                <div>
+                  <label className="ui-label">
+                    <Phone className="inline w-4 h-4 mr-1" /> Phone
+                  </label>
+                  <Input
+                    type="text"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="+91 9876543210"
+                  />
+                </div>
+                <div>
+                  <label className="ui-label">
+                    <MapPin className="inline w-4 h-4 mr-1" /> Location
+                  </label>
+                  <Input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="Pune, Maharashtra"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="ui-label">
+                  Professional Headline
+                </label>
+                <Input
+                  type="text"
+                  name="headline"
+                  value={formData.headline}
+                  onChange={handleChange}
+                  placeholder="Final-year CS student focused on backend engineering"
+                />
+              </div>
+
+              <div className="mb-8">
+                <label className="ui-label">
+                  About
+                </label>
+                <TextArea
+                  name="about"
+                  value={formData.about}
+                  onChange={handleChange}
+                  placeholder="Write a concise summary about your interests, strengths, and career goals."
+                  rows={4}
+                />
               </div>
 
               {/* Education Section */}
@@ -190,6 +287,42 @@ const Profile = () => {
                     step="0.01"
                   />
                 </div>
+                <div>
+                  <label className="ui-label">
+                    Specialization
+                  </label>
+                  <Input
+                    type="text"
+                    name="specialization"
+                    value={formData.specialization}
+                    onChange={handleChange}
+                    placeholder="Computer Science"
+                  />
+                </div>
+                <div>
+                  <label className="ui-label">
+                    Current Semester
+                  </label>
+                  <Input
+                    type="text"
+                    name="currentSemester"
+                    value={formData.currentSemester}
+                    onChange={handleChange}
+                    placeholder="7"
+                  />
+                </div>
+                <div>
+                  <label className="ui-label">
+                    Course Type
+                  </label>
+                  <Input
+                    type="text"
+                    name="courseType"
+                    value={formData.courseType}
+                    onChange={handleChange}
+                    placeholder="Full-time"
+                  />
+                </div>
               </div>
 
               {/* Skills & Experience */}
@@ -212,17 +345,99 @@ const Profile = () => {
 
               <div className="mb-6">
                 <label className="ui-label">
-                  Experience / Projects
+                  Experience
                 </label>
                 <TextArea
                   name="experience"
                   value={formData.experience}
                   onChange={handleChange}
-                  placeholder="Briefly describe your internships or projects..."
+                  placeholder="Internships, freelance work, leadership roles..."
                 />
               </div>
 
-              {/* ✅ UPDATED: Resume File Upload */}
+              <div className="mb-6">
+                <label className="ui-label">
+                  <Briefcase className="inline w-4 h-4 mr-1" /> Projects
+                </label>
+                <TextArea
+                  name="projects"
+                  value={formData.projects}
+                  onChange={handleChange}
+                  placeholder="List your key projects with stack and impact."
+                  rows={4}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                  <label className="ui-label">
+                    Certifications
+                  </label>
+                  <TextArea
+                    name="certifications"
+                    value={formData.certifications}
+                    onChange={handleChange}
+                    placeholder="AWS Cloud Practitioner, NPTEL..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="ui-label">
+                    Achievements
+                  </label>
+                  <TextArea
+                    name="achievements"
+                    value={formData.achievements}
+                    onChange={handleChange}
+                    placeholder="Hackathon ranks, coding badges, awards..."
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                  <label className="ui-label">
+                    Preferred Roles
+                  </label>
+                  <Input
+                    type="text"
+                    name="preferredRoles"
+                    value={formData.preferredRoles}
+                    onChange={handleChange}
+                    placeholder="Backend Developer, SDE-1"
+                  />
+                </div>
+                <div>
+                  <label className="ui-label">
+                    Languages
+                  </label>
+                  <Input
+                    type="text"
+                    name="languages"
+                    value={formData.languages}
+                    onChange={handleChange}
+                    placeholder="English, Hindi"
+                  />
+                </div>
+              </div>
+
+              <h3 className="text-lg font-semibold text-slate-200 mb-4 flex items-center">
+                <LinkIcon className="w-5 h-5 mr-2" /> Portfolio Links
+              </h3>
+              <div className="mb-8">
+                <label className="ui-label">
+                  Links (LinkedIn, GitHub, Portfolio)
+                </label>
+                <TextArea
+                  name="links"
+                  value={formData.links}
+                  onChange={handleChange}
+                  placeholder="https://linkedin.com/in/..., https://github.com/..., https://portfolio..."
+                  rows={3}
+                />
+              </div>
+
               <div className="mb-8">
                 <label className="ui-label">
                   <FileText className="inline w-4 h-4 mr-1" /> Upload Resume (PDF)
@@ -233,7 +448,6 @@ const Profile = () => {
                   onChange={(e) => setFile(e.target.files[0])}
                   className="ui-input p-2"
                 />
-                {/* Show current file name if it exists in DB */}
                 {formData.resumeUrl && !file && (
                   <p className="mt-2 text-sm text-emerald-300 font-medium">
                     Current file on record: {formData.resumeUrl}

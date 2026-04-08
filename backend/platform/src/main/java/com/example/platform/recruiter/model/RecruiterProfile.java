@@ -33,6 +33,25 @@ public class RecruiterProfile {
     private String companyDescription;
 
     private String headOfficeLocation;
+    private String industry;
+    private String companySize;
+    private String foundedYear;
+    private String companyType;
+
+    private String contactPersonName;
+    private String contactPersonDesignation;
+    private String contactPhone;
+    private String hrEmail;
+    private String linkedInUrl;
+
+    @Column(length = 2000)
+    private String hiringForRoles;
+    @Column(length = 2000)
+    private String officeLocations;
+    @Column(length = 2000)
+    private String benefits;
+    @Column(length = 2000)
+    private String aboutCulture;
 
     // Company Logo (Stored as bytes, similar to Resume)
     @Lob

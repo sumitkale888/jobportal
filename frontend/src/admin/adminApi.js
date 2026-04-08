@@ -7,6 +7,13 @@ export const banUser = (userId) => axiosInstance.put(`/admin/users/${userId}/ban
 export const unbanUser = (userId) => axiosInstance.put(`/admin/users/${userId}/unban`);
 export const deleteUser = (userId) => axiosInstance.delete(`/admin/users/${userId}`);
 
+export const getRecruiterProfiles = (verified) => {
+	const query = typeof verified === "boolean" ? `?verified=${verified}` : "";
+	return axiosInstance.get(`/admin/recruiters${query}`);
+};
+export const verifyRecruiter = (profileId) => axiosInstance.put(`/admin/verify-recruiter/${profileId}`);
+export const rejectRecruiter = (profileId) => axiosInstance.delete(`/admin/reject-recruiter/${profileId}`);
+
 export const getJobs = (status) => axiosInstance.get(`/admin/jobs${status ? `?status=${status}` : ""}`);
 export const getReportedJobs = () => axiosInstance.get("/admin/jobs/reported");
 export const approveJob = (jobId) => axiosInstance.put(`/admin/jobs/${jobId}/approve`);
